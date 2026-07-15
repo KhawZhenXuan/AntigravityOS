@@ -27,11 +27,10 @@ used for server-mode login.
 - `antigravity-company-change-requests`: Pending and resolved company name, ID,
   and domain change requests reviewed by the Local/Master Admin.
 - `antigravity-mail-messages`: Internal Mail messages, recipients, timestamps,
-  per-recipient read state, and automatic account-request notifications.
-  `deletedBy` records per-account mailbox removal without deleting other
-  recipients' copies.
+  per-recipient read state, and automatic account-request notifications
+  synchronized through MySQL. `deletedBy` records per-account mailbox removal.
 - `antigravity-branding`: Master-Admin-controlled visible system name and
-  version used by the footer, banner, title, and interface branding.
+  version synchronized through MySQL.
 - `antigravity-password-reset-requests`: Pending, approved, or rejected password
   reset requests.
 - `antigravity-profile-requests`: Pending username/email change requests.

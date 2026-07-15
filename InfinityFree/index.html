@@ -1766,6 +1766,78 @@
   <script src="System/Resources/apps.js"></script>
   <script src="System/Resources/installations.js"></script>
 <script>
+  /* InfinityFree/MySQL persistence bridge for the existing localStorage model. */
+  (() => {
+    "use strict";
+
+    const nativeSetItem = Storage.prototype.setItem;
+    const nativeRemoveItem = Storage.prototype.removeItem;
+    const allowedKey = (key) => key === "terminal-theme"
+      || key.startsWith("terminal-notes")
+      || key.startsWith("antigravity-")
+      || key.startsWith("ag-");
+
+    const sync = {
+      ready: false,
+      online: false,
+      write(action, key, value) {
+        if (!this.ready || !allowedKey(key)) return;
+        fetch(`api.php?action=${action}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(value === undefined ? { key } : { key, value }),
+          credentials: "same-origin",
+          cache: "no-store"
+        }).then((response) => {
+          this.online = response.ok;
+          if (!response.ok) throw new Error(`Sync failed (${response.status})`);
+        }).catch((error) => console.warn("AntigravityOS database sync:", error.message));
+      },
+      async load() {
+        try {
+          const response = await fetch("api.php?action=state", {
+            credentials: "same-origin",
+            cache: "no-store"
+          });
+          if (!response.ok) throw new Error(`Server returned ${response.status}`);
+          const payload = await response.json();
+          const state = payload && payload.state && typeof payload.state === "object" ? payload.state : {};
+          const entries = Object.entries(state).filter(([key, value]) => allowedKey(key) && typeof value === "string");
+          entries.forEach(([key, value]) => nativeSetItem.call(localStorage, key, value));
+          this.online = true;
+          this.ready = true;
+
+          if (!entries.length) {
+            for (let index = 0; index < localStorage.length; index += 1) {
+              const key = localStorage.key(index);
+              if (key && allowedKey(key)) this.write("set", key, localStorage.getItem(key) || "");
+            }
+          }
+        } catch (error) {
+          this.ready = true;
+          this.online = false;
+          console.warn("AntigravityOS is using browser-only storage:", error.message);
+        }
+      }
+    };
+
+    Storage.prototype.setItem = function (key, value) {
+      const normalizedKey = String(key);
+      const normalizedValue = String(value);
+      nativeSetItem.call(this, normalizedKey, normalizedValue);
+      if (this === localStorage) sync.write("set", normalizedKey, normalizedValue);
+    };
+
+    Storage.prototype.removeItem = function (key) {
+      const normalizedKey = String(key);
+      nativeRemoveItem.call(this, normalizedKey);
+      if (this === localStorage) sync.write("remove", normalizedKey);
+    };
+
+    window.ANTIGRAVITY_SERVER_SYNC = sync;
+  })();
+</script>
+<script>
     "use strict";
 
     const AUTH_CONFIG = window.ANTIGRAVITY_AUTH;
@@ -4372,7 +4444,8 @@
         .replaceAll("'", "&#039;");
     }
 
-    function initialize() {
+    async function initialize() {
+      await window.ANTIGRAVITY_SERVER_SYNC.load();
       applyBranding(getBranding());
       new MutationObserver(() => applyBranding(activeBranding)).observe(document.body, { childList:true, subtree:true });
       if (localStorage.getItem(RESET_MARKER_KEY) !== "complete") {
