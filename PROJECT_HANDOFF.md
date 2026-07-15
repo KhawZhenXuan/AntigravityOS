@@ -99,11 +99,15 @@ the running app to change.
 - Files
 - System information
 - Settings, including theme, data reset, app management, and taskbar pins
-- Add User (Admin)
+- App Reset (Local/Master Admin only; preserves branding and Local accounts)
+- Version Update (Local/Master Admin only)
+- Add User (Admin; company Admins are restricted to their company)
 - Profile and password management
 - Profile Change Requests (Admin)
-- Company Registration and company-user export (Admin)
-- Password Reset Requests (Admin)
+- Company Info (company Admin only)
+- Company Registration and company-user export (Local/Master Admin only)
+- Company Change Requests (Local/Master Admin only)
+- Password Reset Requests (routed to the responsible Admin)
 - Company contacts/messaging support is implemented in the main HTML renderer.
 
 ### Optional/store applications in the active catalog

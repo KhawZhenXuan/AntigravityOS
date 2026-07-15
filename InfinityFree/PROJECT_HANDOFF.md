@@ -100,16 +100,22 @@ the running app to change.
 ### Built-in applications
 
 - Help
+- Mail (permanent, pinned internal mail with inbox, sent mail, compose, replies,
+  deletion, cross-company delivery, autocomplete, and unread badges)
 - Antigravity IDE with virtual files, import, export, save, rename, and new file
 - Antigravity Store for optional application installation/uninstallation
 - Files
 - System information
 - Settings, including theme, data reset, app management, and taskbar pins
-- Add User (Admin)
+- App Reset (Local/Master Admin only; preserves branding and Local accounts)
+- Version Update (Local/Master Admin only)
+- Add User (Admin; company Admins are restricted to their company)
 - Profile and password management
 - Profile Change Requests (Admin)
-- Company Registration and company-user export (Admin)
-- Password Reset Requests (Admin)
+- Company Info (company Admin only)
+- Company Registration and company-user export (Local/Master Admin only)
+- Company Change Requests (Local/Master Admin only)
+- Password Reset Requests (routed to the responsible Admin)
 - Company contacts/messaging support is implemented in the main HTML renderer.
 
 ### Optional/store applications in the active catalog
@@ -122,13 +128,12 @@ the running app to change.
 - Contacts
 - Archive Viewer
 - PDF Viewer (file information/selection prototype, not a full PDF renderer)
-- Mail Drafts
 - Calendar
 
 ### Data and account management
 
-- Per-tenant/per-user browser storage for users, companies, requests,
-  installations, pins, notes, and IDE files.
+- MySQL-synchronized browser storage for users, companies, requests, Mail,
+  branding, installations, pins, notes, and IDE files.
 - Admin can assign users to Local or a registered company.
 - Server login searches users belonging to the selected company.
 - Company Registration can export a company's users as `.users.json`.
