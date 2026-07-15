@@ -1,0 +1,3873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>AntigravityOS</title>
+
+  <style>
+    :root {
+      --background: #050807;
+      --panel: rgba(8, 14, 11, 0.96);
+      --panel-secondary: #0b120e;
+      --text: #d7ffe3;
+      --muted: #72947d;
+      --primary: #63ff8c;
+      --primary-soft: rgba(99, 255, 140, 0.12);
+      --border: rgba(99, 255, 140, 0.24);
+      --danger: #ff6978;
+      --warning: #ffd166;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+      --font:
+        "SFMono-Regular",
+        Consolas,
+        "Liberation Mono",
+        Menlo,
+        monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    body {
+      background:
+        radial-gradient(
+          circle at 20% 20%,
+          rgba(39, 255, 114, 0.08),
+          transparent 28%
+        ),
+        radial-gradient(
+          circle at 80% 80%,
+          rgba(52, 134, 255, 0.07),
+          transparent 32%
+        ),
+        var(--background);
+
+      color: var(--text);
+      font-family: var(--font);
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      color: inherit;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .screen {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Background grid */
+
+    .grid-background {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.2;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 36px 36px;
+      mask-image: linear-gradient(to bottom, black, transparent);
+    }
+
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      pointer-events: none;
+      opacity: 0.05;
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          transparent 0,
+          transparent 2px,
+          rgba(255, 255, 255, 0.12) 3px
+        );
+    }
+
+    /* Login */
+
+    #loginScreen {
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .login-shell {
+      width: min(100%, 560px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .window-bar {
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.025);
+      user-select: none;
+    }
+
+    .window-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+
+    .window-dot.red {
+      background: #ff5f57;
+    }
+
+    .window-dot.yellow {
+      background: #febc2e;
+    }
+
+    .window-dot.green {
+      background: #28c840;
+    }
+
+    .window-title {
+      margin-left: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .login-content {
+      padding: 32px;
+    }
+
+    .ascii-logo {
+      margin: 0 0 22px;
+      overflow-x: auto;
+      color: var(--primary);
+      font-size: clamp(8px, 1.7vw, 13px);
+      line-height: 1.2;
+      text-shadow: 0 0 18px rgba(99, 255, 140, 0.28);
+    }
+
+    .login-heading {
+      margin: 0 0 8px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .login-subheading {
+      margin: 0 0 24px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-bottom: 22px;
+      padding: 5px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .auth-tab {
+      border: 0;
+      border-radius: 7px;
+      padding: 10px;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+      transition: 150ms ease;
+    }
+
+    .auth-tab:hover {
+      color: var(--text);
+    }
+
+    .auth-tab.active {
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .field-group {
+      margin-bottom: 16px;
+    }
+
+    .field-label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .terminal-field {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(0, 0, 0, 0.24);
+      transition: 150ms ease;
+    }
+
+    .terminal-field:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    .field-prefix {
+      padding-left: 13px;
+      color: var(--primary);
+    }
+
+    .terminal-field input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      padding: 13px;
+      color: var(--text);
+      background: transparent;
+    }
+
+    .setup-screen,
+    #bootScreen {
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .choice-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+    .brand-ascii { margin-bottom:24px; }
+    .choice-card { min-height:120px; border:1px solid var(--border); border-radius:12px; color:var(--text); background:var(--panel-secondary); cursor:pointer; }
+    .choice-card:hover { border-color:var(--primary); color:var(--primary); background:var(--primary-soft); }
+    .boot-progress { height:8px; overflow:hidden; border:1px solid var(--border); border-radius:999px; }
+    .boot-progress-bar { width:0; height:100%; background:linear-gradient(90deg,var(--primary),#b4ffc7); transition:width 620ms cubic-bezier(.22,.61,.36,1); }
+
+    .password-toggle {
+      flex: 0 0 42px;
+      align-self: stretch;
+      border: 0;
+      border-left: 1px solid var(--border);
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .password-toggle:hover,
+    .password-toggle.active {
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .terminal-field input::placeholder {
+      color: rgba(114, 148, 125, 0.6);
+    }
+
+    .auth-code-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    .secondary-button,
+    .primary-button {
+      border-radius: 9px;
+      cursor: pointer;
+      transition: 150ms ease;
+    }
+
+    .secondary-button {
+      border: 1px solid var(--border);
+      padding: 0 14px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .secondary-button:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .primary-button {
+      width: 100%;
+      border: 1px solid var(--primary);
+      padding: 13px 16px;
+      color: #031306;
+      background: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 0 24px rgba(99, 255, 140, 0.15);
+    }
+
+    .primary-button:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    .primary-button:active {
+      transform: translateY(0);
+    }
+
+    .login-message {
+      min-height: 18px;
+      margin-top: 15px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .login-message.error {
+      color: var(--danger);
+    }
+
+    .login-message.success {
+      color: var(--primary);
+    }
+
+    .demo-details {
+      margin-top: 22px;
+      padding: 14px;
+      border: 1px dashed var(--border);
+      border-radius: 9px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.018);
+      font-size: 11px;
+      line-height: 1.7;
+    }
+
+    .demo-details strong {
+      color: var(--text);
+    }
+
+    /* Main terminal */
+
+    #terminalScreen {
+      position: relative;
+      padding: 18px;
+    }
+
+    .terminal-shell {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+    }
+
+    .terminal-topbar {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .topbar-spacer {
+      flex: 1;
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status-online {
+      color: var(--primary);
+    }
+
+    .topbar-button {
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 7px 10px;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .topbar-button:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .terminal-body {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+    }
+
+    .sidebar {
+      width: 210px;
+      padding: 18px 12px;
+      border-right: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.012);
+    }
+
+    .sidebar-heading {
+      margin: 0 8px 10px;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    .app-shortcut {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px;
+      color: var(--muted);
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .app-shortcut:hover {
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .app-icon {
+      width: 23px;
+      color: var(--primary);
+      text-align: center;
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      margin: 15px 8px;
+      background: var(--border);
+    }
+
+    .terminal-main {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .terminal-output {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 22px 10px;
+      scroll-behavior: smooth;
+    }
+
+    .terminal-output::-webkit-scrollbar,
+    .app-content::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .terminal-output::-webkit-scrollbar-thumb,
+    .app-content::-webkit-scrollbar-thumb {
+      border-radius: 10px;
+      background: var(--border);
+    }
+
+    .output-line {
+      margin-bottom: 6px;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .output-line.muted {
+      color: var(--muted);
+    }
+
+    .output-line.success {
+      color: var(--primary);
+    }
+
+    .output-line.error {
+      color: var(--danger);
+    }
+
+    .output-line.warning {
+      color: var(--warning);
+    }
+
+    .output-command {
+      margin-top: 12px;
+      color: var(--text);
+    }
+
+    .output-command .prompt-user {
+      color: var(--primary);
+    }
+
+    .terminal-input-row {
+      display: flex;
+      align-items: center;
+      padding: 12px 22px 18px;
+      border-top: 1px solid rgba(99, 255, 140, 0.08);
+      background: rgba(0, 0, 0, 0.12);
+    }
+
+    .terminal-prompt {
+      flex-shrink: 0;
+      color: var(--primary);
+      font-size: 13px;
+    }
+
+    #commandInput {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      padding: 5px 8px;
+      color: var(--text);
+      background: transparent;
+      caret-color: var(--primary);
+    }
+
+    .terminal-footer {
+      min-height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.018);
+      font-size: 10px;
+    }
+
+    /* App windows */
+
+    #appLayer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .app-window {
+      position: absolute;
+      top: 70px;
+      left: 80px;
+      width: min(600px, calc(100% - 40px));
+      height: min(430px, calc(100% - 80px));
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(7, 13, 10, 0.98);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.65);
+      pointer-events: auto;
+    }
+
+    .app-window.maximized {
+      inset: 12px !important;
+      width: auto !important;
+      height: auto !important;
+    }
+
+    .app-window-header {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.025);
+      cursor: move;
+      user-select: none;
+    }
+
+    .app-window-title {
+      flex: 1;
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    .window-control {
+      width: 28px;
+      height: 28px;
+      margin-left: 4px;
+      border: 0;
+      border-radius: 6px;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .window-control:hover {
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .window-control.close:hover {
+      color: white;
+      background: var(--danger);
+    }
+
+    .app-content {
+      flex: 1;
+      overflow: auto;
+      padding: 20px;
+    }
+
+    .app-title {
+      margin: 0 0 16px;
+      color: var(--primary);
+      font-size: 18px;
+    }
+
+    .app-description {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .app-input,
+    .app-textarea,
+    .app-select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      outline: 0;
+      padding: 11px 12px;
+      color: var(--text);
+      background: rgba(0, 0, 0, 0.24);
+    }
+
+    .app-input:focus,
+    .app-textarea:focus,
+    .app-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    .app-textarea {
+      min-height: 220px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .app-button {
+      border: 1px solid var(--primary);
+      border-radius: 8px;
+      padding: 9px 13px;
+      color: var(--primary);
+      background: var(--primary-soft);
+      cursor: pointer;
+    }
+
+    .app-button:hover {
+      color: #031306;
+      background: var(--primary);
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .info-table td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .info-table td:first-child {
+      width: 160px;
+      color: var(--muted);
+    }
+
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .file-item {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.018);
+      cursor: pointer;
+    }
+
+    .file-item:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .file-item-icon {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--primary);
+      font-size: 22px;
+    }
+
+    .calculator-display {
+      margin-bottom: 12px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--primary);
+      background: rgba(0, 0, 0, 0.25);
+      font-size: 20px;
+      text-align: right;
+      word-break: break-all;
+    }
+
+    .calculator-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .calculator-key {
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 12px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.025);
+      cursor: pointer;
+    }
+
+    .calculator-key:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .command-list {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 9px 16px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .command-list code {
+      color: var(--primary);
+    }
+
+    .command-list span {
+      color: var(--muted);
+    }
+
+    .notification {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 20000;
+      max-width: 360px;
+      padding: 13px 16px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: 200ms ease;
+    }
+
+    .notification.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Light theme */
+
+    body.light-theme {
+      --background: #edf2ed;
+      --panel: rgba(249, 252, 249, 0.96);
+      --panel-secondary: #ffffff;
+      --text: #17231a;
+      --muted: #68766b;
+      --primary: #11883a;
+      --primary-soft: rgba(17, 136, 58, 0.1);
+      --border: rgba(17, 92, 40, 0.2);
+      --shadow: 0 24px 80px rgba(30, 60, 40, 0.16);
+    }
+
+    body.light-theme .primary-button {
+      color: white;
+    }
+
+    body.light-theme .app-window {
+      background: rgba(249, 252, 249, 0.98);
+    }
+
+    /* Discord-inspired Night surfaces with the existing green accent. */
+    body.night-theme {
+      --background: #1e1f22;
+      --panel: rgba(43, 45, 49, 0.98);
+      --panel-secondary: #313338;
+      --text: #f2f3f5;
+      --muted: #b5bac1;
+      --primary: #63ff8c;
+      --primary-soft: rgba(99, 255, 140, 0.12);
+      --border: rgba(181, 186, 193, 0.18);
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.48);
+    }
+
+    body.night-theme .desktop-topbar,
+    body.night-theme .taskbar,
+    body.night-theme .app-window-header {
+      background: #2b2d31;
+    }
+
+    body.night-theme .app-window,
+    body.night-theme .start-menu,
+    body.night-theme .confirm-dialog {
+      background: #313338;
+    }
+
+    /* Responsive */
+
+    @media (max-width: 760px) {
+      #terminalScreen {
+        padding: 0;
+      }
+
+      .terminal-shell {
+        border: 0;
+        border-radius: 0;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .system-status span:not(.status-online) {
+        display: none;
+      }
+
+      .terminal-output {
+        padding: 16px;
+      }
+
+      .terminal-input-row {
+        padding: 10px 16px 16px;
+      }
+
+      .terminal-prompt {
+        font-size: 11px;
+      }
+
+      .login-content {
+        padding: 24px 20px;
+      }
+
+      .app-window {
+        top: 55px !important;
+        left: 10px !important;
+        width: calc(100% - 20px) !important;
+        height: calc(100% - 70px) !important;
+      }
+
+      .command-list {
+        grid-template-columns: 100px 1fr;
+      }
+    }
+  
+    /* AntigravityOS desktop and taskbar overrides */
+
+    #terminalScreen {
+      padding: 14px;
+    }
+
+    .desktop-shell {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+    }
+
+    .desktop-topbar {
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.025);
+      user-select: none;
+    }
+
+    .desktop-area {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 45%, var(--primary-soft), transparent 40%),
+        rgba(0, 0, 0, 0.08);
+    }
+
+    #appLayer {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .app-window {
+      resize: both;
+      min-width: 340px;
+      min-height: 240px;
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .app-window.terminal-window {
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+    }
+
+    .app-window.terminal-window.maximized {
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none;
+      max-height: none;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .app-window.sudo-window {
+      border-color: rgba(255, 209, 102, 0.72);
+      box-shadow:
+        0 0 0 1px rgba(255, 209, 102, 0.2),
+        0 24px 70px rgba(0, 0, 0, 0.7);
+    }
+
+    .app-window.sudo-window .app-window-header {
+      background:
+        linear-gradient(90deg, rgba(255, 209, 102, 0.18), transparent);
+      border-bottom-color: rgba(255, 209, 102, 0.55);
+    }
+
+    .sudo-badge {
+      margin-left: 10px;
+      padding: 3px 7px;
+      border: 1px solid rgba(255, 209, 102, 0.6);
+      border-radius: 999px;
+      color: var(--warning);
+      font-size: 9px;
+      letter-spacing: 0.8px;
+    }
+
+    .app-window.minimized {
+      display: none;
+    }
+
+    .window-control.minimize:hover {
+      color: var(--warning);
+      background: rgba(255, 209, 102, 0.12);
+    }
+
+    .terminal-app-content {
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .terminal-output {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 18px 20px 10px;
+    }
+
+    .terminal-input-row {
+      flex-shrink: 0;
+      padding: 11px 20px 15px;
+    }
+
+    .taskbar {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border-top: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .running-taskbar-apps {
+      display: flex;
+      min-width: 0;
+      gap: 7px;
+      overflow-x: auto;
+    }
+
+    .taskbar-app {
+      position: relative;
+      width: 42px;
+      min-width: 42px;
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 0;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .taskbar-app:hover,
+    .taskbar-app.active {
+      color: var(--primary);
+      border-color: var(--border);
+      background: var(--primary-soft);
+    }
+
+    .taskbar-app.sudo-task {
+      color: var(--warning);
+    }
+
+    .taskbar-icon {
+      font-weight: 700;
+    }
+
+    .taskbar-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    .start-button {
+      color: var(--primary);
+      border-color: var(--border);
+      font-size: 17px;
+    }
+
+    .apps-button {
+      color: var(--primary);
+      font-size: 16px;
+    }
+
+    .app-launcher {
+      position: fixed;
+      inset: 0;
+      z-index: 45000;
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+      background:
+        radial-gradient(circle at 50% 35%, var(--primary-soft), transparent 42%),
+        var(--background);
+      backdrop-filter: blur(22px);
+    }
+
+    .app-launcher-header {
+      min-height: 68px;
+      display: flex;
+      align-items: center;
+      padding: 0 clamp(18px, 4vw, 54px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .app-launcher-title {
+      flex: 1;
+      margin: 0;
+      color: var(--text);
+      font-size: clamp(18px, 2.5vw, 28px);
+    }
+
+    .app-launcher-close {
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--muted);
+      background: var(--panel);
+      cursor: pointer;
+      font-size: 22px;
+    }
+
+    .app-launcher-close:hover {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .app-launcher-grid {
+      flex: 1;
+      display: grid;
+      grid-auto-flow: column;
+      grid-template-rows: repeat(5, minmax(105px, 1fr));
+      grid-auto-columns: calc((100vw - 8 * clamp(12px, 2.5vw, 30px) - 2 * clamp(22px, 5vw, 70px)) / 5);
+      gap: clamp(12px, 2.5vw, 30px);
+      min-width: 100%;
+      min-height: 0;
+      margin: 0;
+      padding: clamp(22px, 5vw, 70px);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x proximity;
+      scrollbar-color: var(--primary) var(--panel-secondary);
+    }
+
+    .launcher-app {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 13px;
+      border: 1px solid transparent;
+      border-radius: 18px;
+      color: var(--text);
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .launcher-app:hover,
+    .launcher-app:focus-visible {
+      border-color: var(--border);
+      color: var(--primary);
+      background: var(--primary-soft);
+      outline: 0;
+    }
+
+    .launcher-app-icon {
+      width: clamp(62px, 10vw, 92px);
+      height: clamp(62px, 10vw, 92px);
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: var(--panel);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+      font-size: clamp(28px, 5vw, 46px);
+      font-weight: 700;
+    }
+
+    .launcher-app-name {
+      overflow: hidden;
+      max-width: 100%;
+      font-size: clamp(11px, 1.7vw, 14px);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .launcher-placeholder { pointer-events:none; visibility:hidden; }
+    .store-bag-svg { width:58%; height:58%; color:currentColor; }
+    .install-progress { height:10px; overflow:hidden; border:1px solid var(--border); border-radius:999px; background:var(--panel-secondary); }
+    .install-progress-bar { width:0;height:100%;background:linear-gradient(90deg,var(--primary),#b4ffc7);transition:width 620ms cubic-bezier(.22,.61,.36,1); }
+    .settings-row { display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border); }
+    .settings-row-copy { flex:1;min-width:0; }
+    .settings-list { border:1px solid var(--border);border-radius:10px;overflow:hidden; }
+    .settings-list label { display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer; }
+    .settings-list label:last-child { border-bottom:0; }
+    .app-management-row { position:relative;display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border); }
+    .app-management-row:last-child { border-bottom:0; }
+    .app-management-icon { width:34px;height:34px;display:grid;place-items:center;color:var(--primary);font-weight:700; }
+    .dots-button { margin-left:auto;width:34px;height:34px;border:1px solid var(--border);border-radius:7px;color:var(--muted);background:transparent;cursor:pointer;font-size:18px; }
+    .app-row-menu { position:absolute;right:14px;top:50px;z-index:20;padding:7px;border:1px solid var(--border);border-radius:8px;background:var(--panel);box-shadow:var(--shadow); }
+
+    @media (max-width: 520px) {
+      .app-launcher-grid {
+        grid-template-rows: repeat(3, minmax(100px, 1fr));
+        grid-auto-columns: calc((100vw - 40px) / 3);
+        gap: 8px;
+        padding: 18px 10px;
+      }
+
+      .launcher-app {
+        gap: 8px;
+      }
+
+      .launcher-app-icon {
+        border-radius: 16px;
+      }
+    }
+
+    @media (min-width: 1400px) and (min-height: 900px) {
+      .app-launcher-grid { grid-template-rows: repeat(5, minmax(110px, 1fr)); }
+    }
+
+    .app-content { container-type:inline-size; }
+    @container (max-width: 520px) {
+      .file-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .info-table td:first-child { width:110px; }
+      .button-row { gap:6px; }
+    }
+
+    .start-menu {
+      position: absolute;
+      left: 10px;
+      bottom: 62px;
+      z-index: 40000;
+      width: 230px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .start-menu-header {
+      padding: 15px;
+      border-bottom: 1px solid var(--border);
+      color: var(--primary);
+      font-size: 12px;
+    }
+
+    .start-menu-action {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 0;
+      padding: 13px 15px;
+      color: var(--text);
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .start-menu-action:hover {
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .topbar-logout {
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 7px 10px;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .topbar-logout:hover {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .running-indicator {
+      position: absolute;
+      left: 25%;
+      right: 25%;
+      bottom: 2px;
+      height: 2px;
+      border-radius: 999px;
+      background: transparent;
+    }
+
+    .taskbar-app.running .running-indicator {
+      background: var(--primary);
+    }
+
+    .taskbar-app.sudo-task.running .running-indicator {
+      background: var(--warning);
+    }
+
+    .taskbar-spacer {
+      flex: 1;
+    }
+
+    .taskbar-session {
+      padding: 0 8px;
+      color: var(--muted);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    #privilegeDisplay {
+      color: var(--muted);
+    }
+
+    #privilegeDisplay.root {
+      color: var(--warning);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50000;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.66);
+      backdrop-filter: blur(5px);
+    }
+
+    .confirm-dialog {
+      width: min(100%, 420px);
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .confirm-dialog h2 {
+      margin: 0 0 10px;
+      color: var(--text);
+      font-size: 18px;
+    }
+
+    .confirm-dialog p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .danger-button {
+      border-color: var(--danger);
+      color: var(--danger);
+      background: rgba(255, 105, 120, 0.08);
+    }
+
+    .danger-button:hover {
+      color: white;
+      background: var(--danger);
+    }
+
+    @media (max-width: 760px) {
+      #terminalScreen {
+        padding: 0;
+      }
+
+      .desktop-shell {
+        border: 0;
+        border-radius: 0;
+      }
+
+      .taskbar-app {
+        min-width: 44px;
+      }
+
+      .taskbar-app > span:nth-child(2) {
+        display: none;
+      }
+
+      .taskbar-session {
+        display: none;
+      }
+
+      .app-window {
+        resize: none;
+        top: 8px !important;
+        left: 8px !important;
+        width: calc(100% - 16px) !important;
+        height: calc(100% - 16px) !important;
+      }
+    }
+
+  </style>
+</head>
+
+<body class="night-theme">
+  <div class="grid-background"></div>
+  <div class="scanlines"></div>
+
+  <section id="modeScreen" class="screen setup-screen">
+    <div class="login-shell"><div class="login-content">
+      <pre class="ascii-logo brand-ascii">
+    _         _   _                       _ _          ___  ____
+   / \  _ __ | |_(_) __ _ _ __ __ ___   _(_) |_ _   _ / _ \/ ___|
+  / _ \| '_ \| __| |/ _` | '__/ _` \ \ / / | __| | | | | | \___ \
+ / ___ \ | | | |_| | (_| | | | (_| |\ V /| | |_| |_| | |_| |___) |
+/_/   \_\| |_|\__|_|\__, |_|  \__,_| \_/ |_|\__|\__, |\___/|____/
+                     |___/                      |___/
+      </pre>
+      <p class="login-subheading">Choose how to use this system.</p>
+      <div class="choice-grid">
+        <button id="localModeButton" class="choice-card" type="button">Local</button>
+        <button id="serverModeButton" class="choice-card" type="button">Connect to a Server</button>
+      </div>
+    </div></div>
+  </section>
+
+  <section id="serverScreen" class="screen setup-screen hidden">
+    <div class="login-shell"><div class="login-content">
+      <pre class="ascii-logo brand-ascii">
+    _         _   _                       _ _          ___  ____
+   / \  _ __ | |_(_) __ _ _ __ __ ___   _(_) |_ _   _ / _ \/ ___|
+  / _ \| '_ \| __| |/ _` | '__/ _` \ \ / / | __| | | | | | \___ \
+ / ___ \ | | | |_| | (_| | | | (_| |\ V /| | |_| |_| | |_| |___) |
+/_/   \_\| |_|\__|_|\__, |_|  \__,_| \_/ |_|\__|\__, |\___/|____/
+                     |___/                      |___/
+      </pre>
+      <h1 class="login-heading">Connect to a Server</h1>
+      <div class="auth-tabs">
+        <button class="auth-tab active" type="button" data-server-mode="official">AntigravityOS Server</button>
+        <button class="auth-tab" type="button" data-server-mode="self">Self-Hosted</button>
+      </div>
+      <form id="serverForm">
+        <label id="serverAddressLabel" class="field-label" for="serverAddressInput">Server subdomain</label>
+        <div class="terminal-field"><span class="field-prefix">&gt;</span><input id="serverAddressInput" required placeholder="mydomain"><span id="serverSuffix" style="padding-right:12px;color:var(--muted)">.antigravity.os</span></div>
+        <button class="primary-button" style="margin-top:16px" type="submit">CONNECT</button>
+        <div id="serverMessage" class="login-message"></div>
+      </form>
+      <button id="serverBackButton" class="secondary-button" style="margin-top:12px;padding:10px 14px" type="button">Back</button>
+    </div></div>
+  </section>
+
+  <section id="bootScreen" class="screen hidden">
+    <div class="login-shell"><div class="login-content">
+      <pre class="ascii-logo brand-ascii">
+    _         _   _                       _ _          ___  ____
+   / \  _ __ | |_(_) __ _ _ __ __ ___   _(_) |_ _   _ / _ \/ ___|
+  / _ \| '_ \| __| |/ _` | '__/ _` \ \ / / | __| | | | | | \___ \
+ / ___ \ | | | |_| | (_| | | | (_| |\ V /| | |_| |_| | |_| |___) |
+/_/   \_\| |_|\__|_|\__, |_|  \__,_| \_/ |_|\__|\__, |\___/|____/
+                     |___/                      |___/
+      </pre>
+      <h1 class="login-heading">Booting AntigravityOS</h1>
+      <p id="bootStatus" class="login-subheading">Initializing system...</p>
+      <div class="boot-progress"><div id="bootProgressBar" class="boot-progress-bar"></div></div>
+    </div></div>
+  </section>
+
+  <!-- LOGIN SCREEN -->
+
+  <section id="loginScreen" class="screen hidden">
+    <div class="login-shell">
+      <div class="window-bar">
+        <span class="window-title">secure-login — antigravity-os</span>
+      </div>
+
+      <div class="login-content">
+        <pre class="ascii-logo">
+    _         _   _                       _ _          ___  ____  
+   / \  _ __ | |_(_) __ _ _ __ __ ___   _(_) |_ _   _ / _ \/ ___| 
+  / _ \| '_ \| __| |/ _` | '__/ _` \ \ / / | __| | | | | | \___ \ 
+ / ___ \ | | | |_| | (_| | | | (_| |\ V /| | |_| |_| | |_| |___) |
+/_/   \_\| |_|\__|_|\__, |_|  \__,_| \_/ |_|\__|\__, |\___/|____/ 
+                     |___/                      |___/                
+        </pre>
+
+        <p id="loginContext" class="login-subheading hidden"></p>
+
+        <h1 class="login-heading">Authenticate session</h1>
+
+        <p class="login-subheading">
+          Enter your credentials to access the terminal environment.
+        </p>
+
+        <div class="auth-tabs">
+          <button
+            class="auth-tab active"
+            type="button"
+            data-auth-mode="password"
+          >
+            Password
+          </button>
+
+          <button
+            class="auth-tab"
+            type="button"
+            data-auth-mode="first-time"
+          >
+            First-Time Login
+          </button>
+        </div>
+
+        <form id="loginForm">
+          <div class="field-group">
+            <label class="field-label" for="identityInput">
+              Username or email
+            </label>
+
+            <div class="terminal-field">
+              <span class="field-prefix">&gt;</span>
+
+              <input
+                id="identityInput"
+                type="text"
+                autocomplete="username"
+                placeholder="admin or admin@antigravity.local"
+                required
+              />
+            </div>
+          </div>
+
+          <div id="passwordField" class="field-group">
+            <label class="field-label" for="passwordInput">
+              Password
+            </label>
+
+            <div class="terminal-field">
+              <span class="field-prefix">*</span>
+
+              <input
+                id="passwordInput"
+                type="password"
+                autocomplete="current-password"
+                placeholder="Enter password"
+              />
+              <button class="password-toggle" type="button" data-reveal="passwordInput" title="Show password" aria-label="Show password">◉</button>
+            </div>
+          </div>
+
+          <div id="firstTimePasswordField" class="field-group hidden">
+            <label class="field-label" for="firstTimePasswordInput">Create password</label>
+            <div class="terminal-field">
+              <span class="field-prefix">*</span>
+              <input id="firstTimePasswordInput" type="password" autocomplete="new-password" placeholder="Create password" />
+              <button class="password-toggle" type="button" data-reveal="firstTimePasswordInput" title="Show password" aria-label="Show password">◉</button>
+            </div>
+
+            <label class="field-label" for="confirmPasswordInput" style="margin-top: 14px;">Confirm password</label>
+            <div class="terminal-field">
+              <span class="field-prefix">*</span>
+              <input id="confirmPasswordInput" type="password" autocomplete="new-password" placeholder="Confirm password" />
+              <button class="password-toggle" type="button" data-reveal="confirmPasswordInput" title="Show password" aria-label="Show password">◉</button>
+            </div>
+          </div>
+
+          <button id="loginSubmitButton" class="primary-button" type="submit">
+            INITIALIZE SESSION
+          </button>
+
+          <div id="loginMessage" class="login-message"></div>
+        </form>
+
+        <button id="forgotPasswordButton" class="auth-tab" style="display:block;margin:9px 0 0 auto;padding:5px 0" type="button">Forgot password?</button>
+
+        <div id="forgotPasswordPanel" class="hidden" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+          <p id="forgotPasswordStatus" class="login-subheading">Enter your username or email above, then request a reset.</p>
+          <div id="approvedResetFields" class="hidden">
+            <label class="field-label" for="resetPasswordInput">New password</label><div class="terminal-field"><span class="field-prefix">*</span><input id="resetPasswordInput" type="password" autocomplete="new-password" placeholder="New password"><button class="password-toggle" type="button" data-reveal="resetPasswordInput" title="Show password" aria-label="Show password">◉</button></div>
+            <label class="field-label" for="resetPasswordConfirmInput" style="margin-top:12px">Confirm new password</label><div class="terminal-field"><span class="field-prefix">*</span><input id="resetPasswordConfirmInput" type="password" autocomplete="new-password" placeholder="Confirm new password"><button class="password-toggle" type="button" data-reveal="resetPasswordConfirmInput" title="Show password" aria-label="Show password">◉</button></div>
+            <button id="completePasswordResetButton" class="primary-button" type="button" style="margin-top:14px">RESET PASSWORD</button>
+          </div>
+          <button id="requestPasswordResetButton" class="app-button" type="button">Request password reset</button>
+        </div>
+
+        <button id="loginBackButton" class="secondary-button" style="margin-top:14px;padding:10px 14px" type="button">Back</button>
+
+      </div>
+    </div>
+  </section>
+
+<!-- ANTIGRAVITY OS DESKTOP -->
+
+  <section id="terminalScreen" class="screen hidden">
+    <div class="desktop-shell">
+      <header class="desktop-topbar">
+        <span class="window-title">AntigravityOS</span>
+
+        <div class="topbar-spacer"></div>
+
+        <div class="system-status">
+          <span id="privilegeDisplay">admin</span>
+          <span class="status-online">● ONLINE</span>
+        </div>
+      </header>
+
+      <main id="desktopArea" class="desktop-area">
+        <div id="appLayer"></div>
+      </main>
+
+      <footer id="taskbar" class="taskbar">
+        <button id="startButton" class="taskbar-app start-button" type="button" title="Start" aria-expanded="false">
+          <span class="taskbar-icon">◆</span>
+          <span class="taskbar-label">Start</span>
+        </button>
+
+        <button id="appsButton" class="taskbar-app apps-button" type="button" title="Apps" aria-expanded="false">
+          <span class="taskbar-icon">▦</span>
+          <span class="taskbar-label">Apps</span>
+        </button>
+
+        <button
+          class="taskbar-app pinned active"
+          data-taskbar-app="terminal"
+          type="button"
+          title="Terminal"
+        >
+          <span class="taskbar-icon">&gt;_</span>
+          <span class="taskbar-label">Terminal</span>
+          <span class="running-indicator"></span>
+        </button>
+
+        <button
+          class="taskbar-app pinned"
+          data-taskbar-app="settings"
+          type="button"
+          title="Settings"
+        >
+          <span class="taskbar-icon">⚙</span>
+          <span class="taskbar-label">Settings</span>
+          <span class="running-indicator"></span>
+        </button>
+
+        <div id="runningTaskbarApps" class="running-taskbar-apps"></div>
+
+        <div class="taskbar-spacer"></div>
+
+        <span id="sessionUserDisplay" class="taskbar-session">
+          15 Jul 2026, 15:00
+        </span>
+      </footer>
+
+      <div id="startMenu" class="start-menu hidden">
+        <div class="start-menu-header">ANTIGRAVITYOS</div>
+        <button class="start-menu-action" data-power-action="reboot" type="button"><span>↻</span> Reboot</button>
+        <button class="start-menu-action" data-power-action="shutdown" type="button"><span>⏻</span> Shut down</button>
+        <button class="start-menu-action" data-power-action="logout" type="button"><span>⇥</span> Log out</button>
+      </div>
+
+      <section id="appLauncher" class="app-launcher hidden" aria-label="Applications">
+        <header class="app-launcher-header">
+          <h2 class="app-launcher-title">Apps</h2>
+          <button id="closeAppLauncherButton" class="app-launcher-close" type="button" title="Close apps" aria-label="Close apps">×</button>
+        </header>
+        <div id="appLauncherGrid" class="app-launcher-grid"></div>
+      </section>
+    </div>
+  </section>
+
+  <div id="notification" class="notification"></div>
+
+  <div id="logoutDialog" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="confirm-dialog">
+      <h2>End session?</h2>
+      <p>You will be returned to the AntigravityOS login screen.</p>
+
+      <div class="button-row">
+        <button id="cancelLogoutButton" class="app-button" type="button">
+          Cancel
+        </button>
+
+        <button id="confirmLogoutButton" class="app-button danger-button" type="button">
+          Log out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="forgotPasswordDialog" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="forgotPasswordTitle">
+    <div class="confirm-dialog">
+      <h2 id="forgotPasswordTitle">Reset password</h2>
+      <p>Reset an account password in the currently selected Local or company system.</p>
+      <label class="field-label" for="recoveryIdentityInput" style="margin-top:16px">Username or email</label>
+      <input id="recoveryIdentityInput" class="app-input" autocomplete="username" placeholder="Username or email">
+      <label class="field-label" for="recoveryPasswordInput" style="margin-top:12px">New password</label>
+      <div class="terminal-field"><input id="recoveryPasswordInput" type="password" autocomplete="new-password" placeholder="New password"><button class="password-toggle" type="button" data-reveal="recoveryPasswordInput" title="Show password" aria-label="Show password">◉</button></div>
+      <label class="field-label" for="recoveryConfirmInput" style="margin-top:12px">Confirm new password</label>
+      <div class="terminal-field"><input id="recoveryConfirmInput" type="password" autocomplete="new-password" placeholder="Confirm new password"><button class="password-toggle" type="button" data-reveal="recoveryConfirmInput" title="Show password" aria-label="Show password">◉</button></div>
+      <p id="recoveryMessage" class="login-message"></p>
+      <div class="button-row"><button id="cancelRecoveryButton" class="app-button" type="button">Cancel</button><button id="confirmRecoveryButton" class="app-button" type="button">Reset password</button></div>
+    </div>
+  </div>
+
+  <script src="System/Resources/credentials.js"></script>
+  <script src="System/Resources/requests.js"></script>
+  <script src="System/Resources/apps.js"></script>
+  <script src="System/Resources/installations.js"></script>
+<script>
+    "use strict";
+
+    const AUTH_CONFIG = window.ANTIGRAVITY_AUTH;
+
+    if (!AUTH_CONFIG || !Array.isArray(AUTH_CONFIG.users)) {
+      throw new Error("AntigravityOS could not load credentials.js");
+    }
+
+    const ROOT_PASSWORD = AUTH_CONFIG.rootPassword;
+
+    const state = {
+      authMode: "password",
+      connectionMode: "local",
+      serverMode: "official",
+      serverEndpoint: null,
+      companyName: null,
+      companyId: "local",
+      currentUser: "admin",
+      originalUser: "admin",
+      isRootShell: false,
+      commandHistory: [],
+      historyIndex: 0,
+      windowCounter: 0,
+      highestZIndex: 20,
+      loginTime: null,
+      pendingLogout: false,
+      firstTimeStage: "identity",
+      firstTimeAccount: null,
+      isAdmin: false,
+      accountId: null
+    };
+
+    const elements = {
+      modeScreen: document.getElementById("modeScreen"),
+      serverScreen: document.getElementById("serverScreen"),
+      bootScreen: document.getElementById("bootScreen"),
+      bootStatus: document.getElementById("bootStatus"),
+      bootProgressBar: document.getElementById("bootProgressBar"),
+      loginScreen: document.getElementById("loginScreen"),
+      terminalScreen: document.getElementById("terminalScreen"),
+      loginForm: document.getElementById("loginForm"),
+      identityInput: document.getElementById("identityInput"),
+      passwordInput: document.getElementById("passwordInput"),
+      firstTimePasswordInput: document.getElementById("firstTimePasswordInput"),
+      confirmPasswordInput: document.getElementById("confirmPasswordInput"),
+      passwordField: document.getElementById("passwordField"),
+      firstTimePasswordField: document.getElementById("firstTimePasswordField"),
+      loginMessage: document.getElementById("loginMessage"),
+      loginContext: document.getElementById("loginContext"),
+      loginSubmitButton: document.getElementById("loginSubmitButton"),
+      appLayer: document.getElementById("appLayer"),
+      runningTaskbarApps: document.getElementById("runningTaskbarApps"),
+      privilegeDisplay: document.getElementById("privilegeDisplay"),
+      sessionUserDisplay: document.getElementById("sessionUserDisplay"),
+      notification: document.getElementById("notification"),
+      logoutDialog: document.getElementById("logoutDialog"),
+      cancelLogoutButton: document.getElementById("cancelLogoutButton"),
+      confirmLogoutButton: document.getElementById("confirmLogoutButton"),
+      forgotPasswordDialog: document.getElementById("forgotPasswordDialog"),
+      recoveryIdentityInput: document.getElementById("recoveryIdentityInput"),
+      recoveryPasswordInput: document.getElementById("recoveryPasswordInput"),
+      recoveryConfirmInput: document.getElementById("recoveryConfirmInput"),
+      recoveryMessage: document.getElementById("recoveryMessage"),
+      startButton: document.getElementById("startButton"),
+      startMenu: document.getElementById("startMenu"),
+      appsButton: document.getElementById("appsButton"),
+      appLauncher: document.getElementById("appLauncher"),
+      appLauncherGrid: document.getElementById("appLauncherGrid"),
+      closeAppLauncherButton: document.getElementById("closeAppLauncherButton")
+    };
+
+    const commands = [
+      "help", "clear", "apps", "open", "launch", "sudo", "su", "exit",
+      "close", "closeall", "date", "time", "whoami", "hostname", "pwd",
+      "ls", "echo", "theme", "history", "banner", "about",
+      "status", "reboot", "logout"
+    ];
+
+    const availableApps = {
+      help: { title: "Help", icon: "?", render: renderHelpApp },
+      ide: { title: "Antigravity IDE", icon: "</>", render: renderIDEApp },
+      store: { title: "Antigravity Store", icon: "🛍", render: renderStoreApp },
+      files: { title: "Files", icon: "▣", render: renderFilesApp },
+      system: { title: "System", icon: "◉", render: renderSystemApp },
+      settings: { title: "Settings", icon: "⚙", render: renderSettingsApp },
+      adduser: { title: "Add User", icon: "+", render: renderAddUserApp },
+      profile: { title: "Profile", icon: "☺", render: renderProfileApp },
+      profilechanges: { title: "Profile Change Requests", icon: "✓", render: renderProfileRequestsApp },
+      companyregistry: { title: "Company Registration", icon: "C", render: renderCompanyRegistryApp },
+      passwordresets: { title: "Password Reset Requests", icon: "↺", render: renderPasswordResetRequestsApp }
+    };
+
+    const LOCAL_USERS_KEY = "antigravity-local-users";
+    const REQUESTS_KEY = "antigravity-profile-requests";
+    const REQUEST_HISTORY_KEY = "antigravity-profile-request-history";
+    const COMPANIES_KEY = "antigravity-companies";
+    const PASSWORD_RESET_REQUESTS_KEY = "antigravity-password-reset-requests";
+    const RESET_MARKER_KEY = "antigravity-clean-user-reset-2026-07-15";
+
+    function createId(prefix = "id") {
+      return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function tenantStorageId() {
+      return state.connectionMode === "server" && state.serverEndpoint
+        ? `server:${normalizeServerAddress(state.serverEndpoint)}`
+        : "local";
+    }
+
+    function scopedKey(base) { return `${base}:${tenantStorageId()}`; }
+    function adminPasswordKey() { return scopedKey("antigravity-admin-password"); }
+    function getAdminPassword() { return localStorage.getItem(adminPasswordKey()) || AUTH_CONFIG.users.find((user) => user.username.toLowerCase() === "admin")?.password || ROOT_PASSWORD; }
+
+    function runSteppedProgress(duration, onUpdate, onComplete) {
+      const steps = [3, 11, 23, 23, 41, 58, 58, 76, 89, 96, 100];
+      steps.forEach((value, index) => {
+        const uneven = (index / (steps.length - 1)) ** 1.08;
+        setTimeout(() => {
+          onUpdate(value, index);
+          if (index === steps.length - 1) onComplete();
+        }, Math.min(duration, duration * uneven + (index % 3 === 0 ? 120 : 0)));
+      });
+    }
+
+    function uninstallOptionalApp(key, onUpdate, onComplete) {
+      const index = (window.ANTIGRAVITY_OPTIONAL_APPS || []).findIndex((app) => app.key === key);
+      const wait = Math.min(4500, 1800 + Math.max(0, index) * 210);
+      runSteppedProgress(wait, onUpdate, () => {
+        saveInstalledAppKeys(getInstalledAppKeys().filter((item) => item !== key));
+        savePinnedAppKeys(getPinnedAppKeys().filter((item) => item !== key));
+        getOpenWindow(key)?.remove();
+        updateTaskbar();
+        onComplete?.();
+      });
+    }
+
+    function getLocalUsers() {
+      try {
+        const key = scopedKey(LOCAL_USERS_KEY);
+        const users = JSON.parse(localStorage.getItem(key) || "[]");
+        if (!Array.isArray(users)) return [];
+        let changed = false;
+        users.forEach((user) => {
+          if (!user.id) {
+            user.id = createId("user");
+            changed = true;
+          }
+        });
+        if (changed) localStorage.setItem(key, JSON.stringify(users));
+        return users;
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveLocalUsers(users) {
+      localStorage.setItem(scopedKey(LOCAL_USERS_KEY), JSON.stringify(users));
+    }
+
+    function getProfileRequests() {
+      const key = scopedKey(REQUESTS_KEY);
+      if (localStorage.getItem(key) === null) {
+        localStorage.setItem(key, JSON.stringify(window.ANTIGRAVITY_REQUESTS || []));
+      }
+      try {
+        const requests = JSON.parse(localStorage.getItem(key) || "[]");
+        return Array.isArray(requests) ? requests : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveProfileRequests(requests) {
+      localStorage.setItem(scopedKey(REQUESTS_KEY), JSON.stringify(requests));
+    }
+
+    function getRequestHistory() {
+      try {
+        const history = JSON.parse(localStorage.getItem(scopedKey(REQUEST_HISTORY_KEY)) || "[]");
+        return Array.isArray(history) ? history : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveRequestHistory(history) {
+      localStorage.setItem(scopedKey(REQUEST_HISTORY_KEY), JSON.stringify(history));
+    }
+
+    function getCurrentLocalAccount() {
+      return getLocalUsers().find((user) =>
+        user.id === state.accountId || user.username.toLowerCase() === state.originalUser.toLowerCase()
+      );
+    }
+
+    function getCompanies() {
+      try { const companies = JSON.parse(localStorage.getItem(COMPANIES_KEY) || "[]"); return Array.isArray(companies) ? companies : []; }
+      catch (error) { return []; }
+    }
+
+    function saveCompanies(companies) { localStorage.setItem(COMPANIES_KEY, JSON.stringify(companies)); }
+
+    function getPasswordResetRequests() { try { const requests=JSON.parse(localStorage.getItem(PASSWORD_RESET_REQUESTS_KEY)||"[]"); return Array.isArray(requests)?requests:[]; } catch(error){ return []; } }
+    function savePasswordResetRequests(requests) { localStorage.setItem(PASSWORD_RESET_REQUESTS_KEY, JSON.stringify(requests)); }
+
+    function normalizeServerAddress(value) {
+      return String(value).trim().replace(/^https?:\/\//i, "").replace(/\/$/, "").toLowerCase();
+    }
+
+    function resolveCompanyName(mode, address) {
+      const normalized = normalizeServerAddress(address);
+      const registered = getCompanies().find((company) => company.mode === mode && normalizeServerAddress(company.address) === normalized);
+      if (registered) return registered.name;
+      const base = normalized.replace(/\.antigravity\.os$/i, "").split(/[.:/]/)[0];
+      return base ? base.replace(/[-_]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) : "Server";
+    }
+
+    function isAdminOnlyApp(key) {
+      return key === "adduser" || key === "profilechanges" || key === "companyregistry" || key === "passwordresets";
+    }
+
+    function installedAppsKey() {
+      return `antigravity-installed-apps:${tenantStorageId()}:${state.originalUser.toLowerCase()}`;
+    }
+
+    function getInstalledAppKeys() {
+      try {
+        if (localStorage.getItem(installedAppsKey()) === null) {
+          const defaults = state.connectionMode === "server" ? ["contacts", ...(window.ANTIGRAVITY_INSTALLATION_DEFAULTS || [])] : (window.ANTIGRAVITY_INSTALLATION_DEFAULTS || []);
+          localStorage.setItem(installedAppsKey(), JSON.stringify([...new Set(defaults)]));
+        }
+        return JSON.parse(localStorage.getItem(installedAppsKey()) || "[]");
+      }
+      catch (error) { return []; }
+    }
+
+    function saveInstalledAppKeys(keys) {
+      localStorage.setItem(installedAppsKey(), JSON.stringify([...new Set(keys)]));
+      refreshInstalledApps();
+    }
+
+    function pinnedAppsKey() { return `antigravity-pinned-apps:${tenantStorageId()}:${state.originalUser.toLowerCase()}`; }
+    function getPinnedAppKeys() { try { return JSON.parse(localStorage.getItem(pinnedAppsKey()) || "[]"); } catch (error) { return []; } }
+    function savePinnedAppKeys(keys) { localStorage.setItem(pinnedAppsKey(), JSON.stringify([...new Set(keys)])); updateTaskbar(); }
+
+    function refreshInstalledApps() {
+      (window.ANTIGRAVITY_OPTIONAL_APPS || []).forEach((app) => delete availableApps[app.key]);
+      const installed = getInstalledAppKeys();
+      (window.ANTIGRAVITY_OPTIONAL_APPS || []).forEach((app) => {
+        if (installed.includes(app.key)) {
+          availableApps[app.key] = app.key === "contacts" && state.connectionMode === "server"
+            ? { ...app, render: renderCompanyContactsApp }
+            : app;
+        }
+      });
+    }
+
+    function findAccount(identity) {
+      const normalized = String(identity).trim().toLowerCase();
+      const configuredUsers = AUTH_CONFIG.users.map((user) => user.username.toLowerCase() === "admin" ? { ...user, password: getAdminPassword() } : user);
+      return [...configuredUsers, ...getLocalUsers()].find((user) =>
+        [user.username, user.email].filter(Boolean).some(
+          (value) => String(value).toLowerCase() === normalized
+        )
+      );
+    }
+
+    function findAccountForCurrentConnection(identity) {
+      const normalized = String(identity).trim().toLowerCase();
+      const managed = getLocalUsers().filter((user) =>
+        state.connectionMode === "local"
+          ? !user.companyId || user.companyId === "local"
+          : user.companyId === state.companyId
+      );
+      const candidates = state.connectionMode === "local" ? [...AUTH_CONFIG.users, ...managed] : managed;
+      return candidates.find((user) => [user.username, user.email].filter(Boolean).some((value) => String(value).toLowerCase() === normalized));
+    }
+
+    function bindPasswordToggles(scope = document) {
+      scope.querySelectorAll("[data-reveal]").forEach((button) => {
+        if (button.dataset.revealBound === "true") return;
+        button.dataset.revealBound = "true";
+        button.addEventListener("click", () => {
+          const input = scope.querySelector(`#${CSS.escape(button.dataset.reveal)}`) || document.getElementById(button.dataset.reveal);
+          if (!input) return;
+        const reveal = input.type === "password";
+        input.type = reveal ? "text" : "password";
+        button.classList.toggle("active", reveal);
+        button.title = reveal ? "Hide password" : "Show password";
+        button.setAttribute("aria-label", button.title);
+        });
+      });
+    }
+
+    bindPasswordToggles();
+
+    document.getElementById("localModeButton").addEventListener("click", () => {
+      state.connectionMode = "local";
+      state.serverEndpoint = null;
+      state.companyName = null;
+      state.companyId = "local";
+      elements.loginContext.classList.add("hidden");
+      elements.modeScreen.classList.add("hidden");
+      elements.loginScreen.classList.remove("hidden");
+      elements.identityInput.focus();
+    });
+
+    document.getElementById("serverModeButton").addEventListener("click", () => {
+      const serverInput = document.getElementById("serverAddressInput");
+      const serverMessage = document.getElementById("serverMessage");
+      serverInput.value = "";
+      serverMessage.textContent = "";
+      serverMessage.className = "login-message";
+      elements.modeScreen.classList.add("hidden");
+      elements.serverScreen.classList.remove("hidden");
+      serverInput.focus();
+    });
+
+    document.getElementById("serverBackButton").addEventListener("click", () => {
+      const serverMessage = document.getElementById("serverMessage");
+      serverMessage.textContent = "";
+      serverMessage.className = "login-message";
+      elements.serverScreen.classList.add("hidden");
+      elements.modeScreen.classList.remove("hidden");
+    });
+
+    document.querySelectorAll("[data-server-mode]").forEach((button) => button.addEventListener("click", () => {
+      state.serverMode = button.dataset.serverMode;
+      document.querySelectorAll("[data-server-mode]").forEach((item) => item.classList.toggle("active", item === button));
+      const selfHosted = state.serverMode === "self";
+      document.getElementById("serverSuffix").classList.toggle("hidden", selfHosted);
+      document.getElementById("serverAddressLabel").textContent = selfHosted ? "Self-hosted server address" : "Server subdomain";
+      document.getElementById("serverAddressInput").placeholder = selfHosted ? "server.example.com" : "mydomain";
+      const serverMessage = document.getElementById("serverMessage");
+      serverMessage.textContent = "";
+      serverMessage.className = "login-message";
+    }));
+
+    document.getElementById("serverForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const value = normalizeServerAddress(document.getElementById("serverAddressInput").value);
+      const message = document.getElementById("serverMessage");
+      if (state.serverMode === "official" && !/^[a-z0-9-]+$/i.test(value)) {
+        message.textContent = "Enter only the AntigravityOS server domain."; message.className = "login-message error"; return;
+      }
+      if (state.serverMode === "self" && !/^(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?(?:\/.*)?$/i.test(value)) {
+        message.textContent = "Enter a valid server hostname without http:// or https://."; message.className = "login-message error"; return;
+      }
+      const registeredCompany = getCompanies().find((company) => company.mode === state.serverMode && normalizeServerAddress(company.address) === normalizeServerAddress(state.serverMode === "official" ? `${value}.antigravity.os` : value));
+      if (!registeredCompany) {
+        message.textContent = "This company is not registered for the selected server type. Contact an AntigravityOS administrator."; message.className = "login-message error"; return;
+      }
+      state.connectionMode = "server";
+      state.serverEndpoint = state.serverMode === "official" ? `${value}.antigravity.os` : value;
+      state.companyName = registeredCompany.name;
+      state.companyId = registeredCompany.id;
+      elements.serverScreen.classList.add("hidden");
+      elements.loginScreen.classList.remove("hidden");
+      elements.loginContext.textContent = `Logging into ${state.companyName}`;
+      elements.loginContext.classList.remove("hidden");
+      setLoginMessage("");
+    });
+
+    document.getElementById("loginBackButton").addEventListener("click", () => {
+      elements.loginScreen.classList.add("hidden");
+      elements.modeScreen.classList.remove("hidden");
+      elements.loginContext.classList.add("hidden");
+      elements.loginForm.reset();
+      setAuthenticationMode("password");
+    });
+
+    function getResettableAccount() {
+      const identity = elements.identityInput.value.trim().toLowerCase();
+      return getLocalUsers().filter((user) => state.connectionMode === "local" ? (!user.companyId || user.companyId === "local") : user.companyId === state.companyId).find((user) => user.username.toLowerCase() === identity || String(user.email).toLowerCase() === identity);
+    }
+
+    function refreshForgotPasswordPanel() {
+      const status = document.getElementById("forgotPasswordStatus");
+      const fields = document.getElementById("approvedResetFields");
+      const requestButton = document.getElementById("requestPasswordResetButton");
+      const account = getResettableAccount();
+      const request = account && getPasswordResetRequests().find((item) => item.userId === account.id);
+      fields.classList.toggle("hidden", request?.status !== "approved");
+      requestButton.classList.toggle("hidden", request?.status === "approved");
+      status.textContent = !account ? "Enter a managed username or email above." : request?.status === "approved" ? "The Admin approved your request. Create a new password." : request?.status === "pending" ? "Your password-reset request is awaiting Admin approval." : request?.status === "rejected" ? `Request rejected${request.reason ? `: ${request.reason}` : "."}` : "Request an Admin-approved password reset.";
+    }
+
+    document.getElementById("forgotPasswordButton").addEventListener("click", () => {
+      document.getElementById("forgotPasswordPanel").classList.toggle("hidden");
+      refreshForgotPasswordPanel();
+    });
+
+    document.getElementById("requestPasswordResetButton").addEventListener("click", () => {
+      const account = getResettableAccount();
+      const status = document.getElementById("forgotPasswordStatus");
+      if (!account) { status.textContent = "Only managed user accounts can request a reset. Admin credentials remain read-only."; return; }
+      const requests = getPasswordResetRequests().filter((item) => item.userId !== account.id);
+      requests.push({ id:createId("password-reset"), userId:account.id, username:account.username, email:account.email, status:"pending", createdAt:new Date().toISOString() });
+      savePasswordResetRequests(requests);
+      refreshForgotPasswordPanel();
+    });
+
+    document.getElementById("completePasswordResetButton").addEventListener("click", () => {
+      const account = getResettableAccount();
+      const next = document.getElementById("resetPasswordInput").value;
+      const confirmation = document.getElementById("resetPasswordConfirmInput").value;
+      const status = document.getElementById("forgotPasswordStatus");
+      const approved = account && getPasswordResetRequests().find((item) => item.userId === account.id && item.status === "approved");
+      if (!approved) { status.textContent = "This reset has not been approved."; return; }
+      if (next.length < 8) { status.textContent = "Password must contain at least 8 characters."; return; }
+      if (next !== confirmation) { status.textContent = "Passwords do not match."; return; }
+      const users = getLocalUsers(); const index = users.findIndex((user) => user.id === account.id); users[index].password = next; saveLocalUsers(users);
+      savePasswordResetRequests(getPasswordResetRequests().filter((item) => item.userId !== account.id));
+      document.getElementById("forgotPasswordPanel").classList.add("hidden");
+      setLoginMessage("Password reset completed. You can now sign in.", "success");
+    });
+
+    document.querySelectorAll("[data-auth-mode]").forEach((button) => {
+      button.addEventListener("click", () => {
+        setAuthenticationMode(button.dataset.authMode);
+      });
+    });
+
+    function setAuthenticationMode(mode) {
+      state.authMode = mode;
+      state.firstTimeStage = "identity";
+      state.firstTimeAccount = null;
+      elements.identityInput.disabled = false;
+
+      document.querySelectorAll("[data-auth-mode]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.authMode === mode);
+      });
+
+      elements.passwordField.classList.toggle("hidden", mode !== "password");
+      elements.firstTimePasswordField.classList.add("hidden");
+      elements.loginSubmitButton.textContent = mode === "first-time" ? "NEXT" : "INITIALIZE SESSION";
+      setLoginMessage("");
+    }
+
+    elements.loginForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const identity = elements.identityInput.value.trim();
+      const password = elements.passwordInput.value;
+      let sessionAccount = null;
+
+      if (!identity) {
+        setLoginMessage("Username or email is required.", "error");
+        return;
+      }
+
+      if (state.authMode === "password") {
+        const account = findAccountForCurrentConnection(identity);
+
+        if (!account || password !== account.password) {
+          setLoginMessage("Authentication failed. Invalid username or password.", "error");
+          return;
+        }
+        if (state.connectionMode === "server" && AUTH_CONFIG.users.includes(account)) {
+          setLoginMessage("The built-in Admin account can only sign in through Local mode.", "error");
+          return;
+        }
+        sessionAccount = account;
+      } else {
+        if (state.firstTimeStage === "identity") {
+          const account = findAccountForCurrentConnection(identity);
+          const isManagedUser = getLocalUsers().some(
+            (user) => user.username.toLowerCase() === account?.username?.toLowerCase()
+          );
+
+          if (!account || !isManagedUser) {
+            setLoginMessage("No new user invitation matches that username or email.", "error");
+            return;
+          }
+
+          if (account.password) {
+            setLoginMessage("This account already has a password. Use Password login.", "error");
+            return;
+          }
+
+          state.firstTimeAccount = account;
+          state.firstTimeStage = "password";
+          elements.identityInput.disabled = true;
+          elements.firstTimePasswordField.classList.remove("hidden");
+          elements.loginSubmitButton.textContent = "CREATE PASSWORD";
+          elements.firstTimePasswordInput.focus();
+          setLoginMessage("Create a password for this account.", "success");
+          return;
+        }
+
+        const newPassword = elements.firstTimePasswordInput.value;
+        const confirmation = elements.confirmPasswordInput.value;
+        if (newPassword.length < 8) {
+          setLoginMessage("Password must contain at least 8 characters.", "error");
+          return;
+        }
+        if (newPassword !== confirmation) {
+          setLoginMessage("Passwords do not match.", "error");
+          return;
+        }
+
+        const users = getLocalUsers();
+        const index = users.findIndex(
+          (user) => user.username.toLowerCase() === state.firstTimeAccount.username.toLowerCase()
+        );
+        if (index < 0) {
+          setLoginMessage("The user invitation is no longer available.", "error");
+          return;
+        }
+        users[index].password = newPassword;
+        saveLocalUsers(users);
+        elements.identityInput.disabled = false;
+        setAuthenticationMode("password");
+        elements.identityInput.value = state.firstTimeAccount?.username || identity;
+        setLoginMessage("Password created. You can now sign in.", "success");
+        elements.passwordInput.focus();
+        return;
+      }
+
+      const username = identity.includes("@") ? identity.split("@")[0] : identity;
+      beginSession(
+        sessionAccount?.username || username,
+        sessionAccount?.username?.toLowerCase() === "admin",
+        sessionAccount?.id || null
+      );
+    });
+
+    function setLoginMessage(message, type = "") {
+      elements.loginMessage.textContent = message;
+      elements.loginMessage.className = "login-message";
+      if (type) elements.loginMessage.classList.add(type);
+    }
+
+    function isValidEmail(value) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    }
+
+    function beginSession(username, isAdmin = false, accountId = null) {
+      state.originalUser = sanitizeUsername(username) || "user";
+      state.currentUser = state.originalUser;
+      state.isAdmin = Boolean(isAdmin);
+      state.accountId = accountId;
+      state.isRootShell = false;
+      state.commandHistory = [];
+      state.historyIndex = 0;
+      state.loginTime = new Date();
+      state.pendingLogout = false;
+
+      elements.loginScreen.classList.add("hidden");
+      elements.bootScreen.classList.remove("hidden");
+      elements.appLayer.innerHTML = "";
+      elements.runningTaskbarApps.innerHTML = "";
+      refreshInstalledApps();
+
+      const wait = Math.min(20000, 2000 + getInstalledAppKeys().length * 1200);
+      runSteppedProgress(wait, (progress) => {
+        elements.bootProgressBar.style.width = `${progress}%`;
+        elements.bootStatus.textContent = progress < 35 ? "Loading system services..." : progress < 75 ? "Loading installed applications..." : "Preparing desktop...";
+      }, () => {
+          elements.bootScreen.classList.add("hidden");
+          elements.terminalScreen.classList.remove("hidden");
+          updateIdentityUI();
+          createTerminalWindow();
+          printBanner();
+          printLine(`Session initialized for ${state.currentUser}.`, "success");
+          printLine('Type "help" for commands. Applications launch only through terminal commands.', "muted");
+      });
+    }
+
+    function performLogout() {
+      elements.logoutDialog.classList.add("hidden");
+      closeAllApps(true);
+      elements.terminalScreen.classList.add("hidden");
+      elements.loginScreen.classList.remove("hidden");
+      elements.loginForm.reset();
+      setAuthenticationMode("password");
+      setLoginMessage("Session terminated successfully.", "success");
+      elements.identityInput.focus();
+    }
+
+    function requestLogout() {
+      elements.logoutDialog.classList.remove("hidden");
+      elements.cancelLogoutButton.focus();
+    }
+
+    elements.cancelLogoutButton.addEventListener("click", () => {
+      elements.logoutDialog.classList.add("hidden");
+      focusTopVisibleWindow();
+    });
+
+    elements.confirmLogoutButton.addEventListener("click", performLogout);
+
+    elements.logoutDialog.addEventListener("click", (event) => {
+      if (event.target === elements.logoutDialog) {
+        elements.logoutDialog.classList.add("hidden");
+        focusTopVisibleWindow();
+      }
+    });
+
+    function sanitizeUsername(value) {
+      return value.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 24);
+    }
+
+    function createTerminalWindow() {
+      const existing = getOpenWindow("terminal");
+      if (existing) {
+        restoreAndFocusWindow(existing, "Terminal is already open.");
+        return existing;
+      }
+
+      state.highestZIndex += 1;
+
+      const windowElement = document.createElement("section");
+      windowElement.className = "app-window terminal-window";
+      windowElement.classList.add("maximized");
+      windowElement.dataset.app = "terminal";
+      windowElement.dataset.sudo = "false";
+      windowElement.style.zIndex = state.highestZIndex;
+
+      windowElement.innerHTML = `
+        <header class="app-window-header">
+          <span class="app-window-title">Terminal</span>
+
+          <button class="window-control minimize" type="button" title="Minimize">—</button>
+          <button class="window-control maximize" type="button" title="Maximize">□</button>
+        </header>
+
+        <div class="app-content terminal-app-content">
+          <div id="terminalOutput" class="terminal-output"></div>
+
+          <form id="commandForm" class="terminal-input-row">
+            <span id="terminalPrompt" class="terminal-prompt"></span>
+            <input
+              id="commandInput"
+              type="text"
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Terminal command"
+            />
+          </form>
+        </div>
+      `;
+
+      elements.appLayer.appendChild(windowElement);
+      bindWindowControls(windowElement, { closable: false });
+      bindTerminalEvents(windowElement);
+      makeWindowDraggable(windowElement);
+      updateTaskbar();
+      updateIdentityUI();
+      setTimeout(focusTerminal, 0);
+      return windowElement;
+    }
+
+    function closeStartMenu() {
+      elements.startMenu.classList.add("hidden");
+      elements.startButton.setAttribute("aria-expanded", "false");
+    }
+
+    function closeAppLauncher() {
+      elements.appLauncher.classList.add("hidden");
+      elements.appsButton.setAttribute("aria-expanded", "false");
+    }
+
+    function appIconMarkup(key, fallback) {
+      if (key === "store") {
+        return '<svg class="store-bag-svg" viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" d="M14 20h36l-3 36H17L14 20Zm10 0h16v-4a8 8 0 0 0-16 0v4Zm4 0h8v-4a4 4 0 0 0-8 0v4Z"/></svg>';
+      }
+      if (key === "files") {
+        return '<svg class="store-bag-svg" viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" opacity=".55" d="M5 15h22l6 7h26v32H5z"/><path fill="currentColor" d="M7 25h52l-5 29H3z"/><path fill="var(--panel-secondary)" d="M12 31h38v5H12z"/></svg>';
+      }
+      if (key === "contacts") {
+        return '<svg class="store-bag-svg" viewBox="0 0 64 64" aria-hidden="true"><rect x="9" y="5" width="46" height="54" rx="12" fill="currentColor"/><circle cx="32" cy="25" r="9" fill="var(--panel-secondary)"/><path fill="var(--panel-secondary)" d="M17 50c2-10 9-15 15-15s13 5 15 15H17Z"/><path stroke="currentColor" stroke-width="3" d="M9 18H4m5 14H4m5 14H4"/></svg>';
+      }
+      if (key === "profile") {
+        return '<svg class="store-bag-svg" viewBox="0 0 64 64" aria-hidden="true"><circle cx="25" cy="23" r="10" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="45" cy="27" r="7" fill="none" stroke="currentColor" stroke-width="4"/><path d="M8 54c2-13 10-20 18-20s16 7 18 20M39 39c9 0 15 5 17 15" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg>';
+      }
+      return escapeHtml(fallback || "□");
+    }
+
+    function renderAppLauncher() {
+      const apps = [
+        { key: "terminal", title: "Terminal", icon: ">_" },
+        ...Object.entries(availableApps)
+          .filter(([key]) => !isAdminOnlyApp(key) || state.isAdmin)
+          .map(([key, app]) => ({ key, title: app.title, icon: app.icon }))
+      ];
+
+      elements.appLauncherGrid.innerHTML = "";
+
+      apps.forEach((app) => {
+        const button = document.createElement("button");
+        button.className = "launcher-app";
+        button.type = "button";
+        button.title = app.title;
+        button.innerHTML = `
+          <span class="launcher-app-icon">${appIconMarkup(app.key, app.icon)}</span>
+          <span class="launcher-app-name">${escapeHtml(app.title)}</span>
+        `;
+        button.addEventListener("click", () => {
+          closeAppLauncher();
+          if (app.key === "terminal") createTerminalWindow();
+          else launchApp(app.key);
+        });
+        elements.appLauncherGrid.appendChild(button);
+      });
+
+      const minimumCells = Math.max(25, Math.ceil(apps.length / 25) * 25);
+      for (let index = apps.length; index < minimumCells; index += 1) {
+        const placeholder = document.createElement("span");
+        placeholder.className = "launcher-placeholder";
+        elements.appLauncherGrid.appendChild(placeholder);
+      }
+    }
+
+    elements.startButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const willOpen = elements.startMenu.classList.contains("hidden");
+      elements.startMenu.classList.toggle("hidden", !willOpen);
+      elements.startButton.setAttribute("aria-expanded", String(willOpen));
+    });
+
+    elements.appsButton.addEventListener("click", () => {
+      closeStartMenu();
+      renderAppLauncher();
+      elements.appLauncher.classList.remove("hidden");
+      elements.appsButton.setAttribute("aria-expanded", "true");
+      elements.appLauncherGrid.querySelector("button")?.focus();
+    });
+
+    elements.closeAppLauncherButton.addEventListener("click", () => {
+      closeAppLauncher();
+      focusTopVisibleWindow();
+    });
+
+    elements.appLauncherGrid.addEventListener("wheel", (event) => {
+      if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+        event.preventDefault();
+        elements.appLauncherGrid.scrollLeft += event.deltaY;
+      }
+    }, { passive: false });
+
+    elements.startMenu.querySelectorAll("[data-power-action]").forEach((button) => {
+      button.addEventListener("click", () => {
+        closeStartMenu();
+        const action = button.dataset.powerAction;
+        if (action === "logout") requestLogout();
+        if (action === "reboot") simulateReboot();
+        if (action === "shutdown") simulateShutdown();
+      });
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest("#startMenu") && !event.target.closest("#startButton")) closeStartMenu();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeStartMenu();
+        closeAppLauncher();
+      }
+    });
+
+    function bindTerminalEvents(windowElement) {
+      const form = windowElement.querySelector("#commandForm");
+      const input = windowElement.querySelector("#commandInput");
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const rawCommand = input.value.trim();
+        if (!rawCommand) return;
+
+        state.commandHistory.push(rawCommand);
+        state.historyIndex = state.commandHistory.length;
+        printCommand(rawCommand);
+        executeCommand(rawCommand);
+        input.value = "";
+        scrollTerminalToBottom();
+      });
+
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          if (!state.commandHistory.length) return;
+          state.historyIndex = Math.max(0, state.historyIndex - 1);
+          input.value = state.commandHistory[state.historyIndex] || "";
+          moveCursorToEnd(input);
+        }
+
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          if (!state.commandHistory.length) return;
+          state.historyIndex = Math.min(state.commandHistory.length, state.historyIndex + 1);
+          input.value = state.commandHistory[state.historyIndex] || "";
+          moveCursorToEnd(input);
+        }
+
+        if (event.key === "Tab") {
+          event.preventDefault();
+          autocompleteCommand();
+        }
+
+        if (event.ctrlKey && event.key.toLowerCase() === "l") {
+          event.preventDefault();
+          clearTerminal();
+        }
+
+        if (event.ctrlKey && event.key.toLowerCase() === "c") {
+          event.preventDefault();
+          input.value = "";
+          printLine("^C", "muted");
+        }
+      });
+    }
+
+    function executeCommand(rawCommand, options = {}) {
+      const trimmed = rawCommand.trim();
+      if (!trimmed) return;
+
+      const parts = trimmed.split(/\s+/);
+      const command = parts[0].toLowerCase();
+      const args = parts.slice(1);
+      const argumentText = trimmed.slice(parts[0].length).trim();
+      const sudo = Boolean(options.sudo || state.isRootShell);
+
+      if (command === "sudo") {
+        handleSudoCommand(argumentText);
+        return;
+      }
+
+      if (command === "su") {
+        if (args[0] === "-" || args[0]?.toLowerCase() === "root") {
+          enterRootShell();
+        } else {
+          printLine('Usage: su -   or   sudo su', "warning");
+        }
+        return;
+      }
+
+      switch (command) {
+        case "help":
+          showHelp();
+          break;
+        case "clear":
+        case "cls":
+          clearTerminal();
+          break;
+        case "apps":
+          listApps();
+          break;
+        case "open":
+        case "launch":
+          if (!args[0]) {
+            printLine("Usage: launch <app>", "warning");
+            return;
+          }
+          launchApp(args[0].toLowerCase(), { sudo });
+          break;
+        case "close":
+          closeTopApp();
+          break;
+        case "closeall":
+          closeAllApps(false);
+          printLine("All closable application windows closed.", "success");
+          break;
+        case "date":
+          printLine(new Date().toLocaleDateString(undefined, {
+            weekday: "long", year: "numeric", month: "long", day: "numeric"
+          }));
+          break;
+        case "time":
+          printLine(new Date().toLocaleTimeString());
+          break;
+        case "whoami":
+          printLine(state.isRootShell ? "root" : state.currentUser);
+          break;
+        case "hostname":
+          printLine("antigravity-os");
+          break;
+        case "pwd":
+          printLine(state.isRootShell ? "/root" : `/home/${state.currentUser}`);
+          break;
+        case "ls":
+          printLine("Desktop/  Documents/  Downloads/  Notes/  apps/  readme.txt", "success");
+          break;
+        case "echo":
+          printLine(argumentText);
+          break;
+        case "theme":
+          handleThemeCommand(args[0]);
+          break;
+        case "history":
+          showCommandHistory();
+          break;
+        case "banner":
+          printBanner();
+          break;
+        case "about":
+          printLine("AntigravityOS is a browser-based terminal desktop built with HTML, CSS and JavaScript.");
+          break;
+        case "status":
+          printSystemStatus();
+          break;
+        case "reboot":
+          simulateReboot();
+          break;
+        case "logout":
+          requestLogout();
+          break;
+        case "exit":
+          if (state.isRootShell) {
+            leaveRootShell();
+          } else {
+            printLine('Use "logout" to end the session.', "warning");
+          }
+          break;
+        default:
+          printLine(`Command not found: ${command}. Type "help" for a list of commands.`, "error");
+      }
+    }
+
+    function handleSudoCommand(argumentText) {
+      if (!argumentText) {
+        printLine("usage: sudo <command>", "warning");
+        return;
+      }
+
+      const normalized = argumentText.trim().toLowerCase();
+
+      if (normalized === "su" || normalized === "su -" || normalized === "-i") {
+        enterRootShell();
+        return;
+      }
+
+      printLine(`[sudo] executing as root: ${argumentText}`, "warning");
+      executeCommand(argumentText, { sudo: true });
+    }
+
+    function enterRootShell() {
+      if (state.isRootShell) {
+        printLine("Already running a root shell.", "muted");
+        return;
+      }
+
+      state.isRootShell = true;
+      updateIdentityUI();
+      printLine("Root shell activated. Type \"exit\" to return to the user shell.", "warning");
+    }
+
+    function leaveRootShell() {
+      state.isRootShell = false;
+      updateIdentityUI();
+      printLine(`Returned to ${state.currentUser}.`, "success");
+    }
+
+    function updateIdentityUI() {
+      const prompt = document.getElementById("terminalPrompt");
+      const effectiveUser = state.isRootShell ? "root" : state.currentUser;
+      const symbol = state.isRootShell ? "#" : "$";
+
+      if (prompt) {
+        prompt.textContent = `${effectiveUser}@antigravity:~${symbol}`;
+      }
+
+      updateClock();
+
+      elements.privilegeDisplay.textContent = effectiveUser;
+
+      elements.privilegeDisplay.classList.toggle("root", state.isRootShell);
+    }
+
+    function printCommand(command) {
+      const output = document.getElementById("terminalOutput");
+      if (!output) return;
+
+      const line = document.createElement("div");
+      line.className = "output-line output-command";
+
+      const prompt = document.createElement("span");
+      prompt.className = "prompt-user";
+
+      const effectiveUser = state.isRootShell ? "root" : state.currentUser;
+      const symbol = state.isRootShell ? "#" : "$";
+      prompt.textContent = `${effectiveUser}@antigravity:~${symbol} `;
+
+      const text = document.createElement("span");
+      text.textContent = command;
+
+      line.append(prompt, text);
+      output.appendChild(line);
+    }
+
+    function printLine(text = "", type = "") {
+      const output = document.getElementById("terminalOutput");
+      if (!output) return null;
+
+      const line = document.createElement("div");
+      line.className = "output-line";
+      if (type) line.classList.add(type);
+      line.textContent = String(text);
+      output.appendChild(line);
+      scrollTerminalToBottom();
+      return line;
+    }
+
+    function printBanner() {
+      printLine([
+        "╔══════════════════════════════════════════════╗",
+        "║             ANTIGRAVITY OS v1.0              ║",
+        "║       Command Desktop Environment Ready      ║",
+        "╚══════════════════════════════════════════════╝"
+      ].join("\n"), "success");
+    }
+
+    function showHelp() {
+      [
+        ["help", "Show command reference"],
+        ["apps", "List installed applications"],
+        ["launch <app>", "Launch or focus an application"],
+        ["sudo launch <app>", "Launch an application with root styling"],
+        ["sudo su", "Enter a persistent root shell"],
+        ["exit", "Leave the root shell"],
+        ["close", "Close the top closable application"],
+        ["closeall", "Close every closable application"],
+        ["clear", "Clear terminal output"],
+        ["date / time", "Show the current date or time"],
+        ["whoami", "Show the effective user"],
+        ["theme night|dark|light", "Change interface theme"],
+        ["status", "Show session status"],
+        ["reboot", "Simulate a reboot"],
+        ["logout", "Open logout confirmation"]
+      ].forEach(([command, description], index) => {
+        if (index === 0) {
+          printLine("AVAILABLE COMMANDS", "success");
+          printLine("────────────────────────────────────────", "muted");
+        }
+        printLine(`${command.padEnd(20)} ${description}`);
+      });
+    }
+
+    function listApps() {
+      printLine("INSTALLED APPLICATIONS", "success");
+
+      Object.entries(availableApps).forEach(([key, app]) => {
+        if (isAdminOnlyApp(key) && !state.isAdmin) return;
+        const open = getOpenWindow(key);
+        const stateLabel = open
+          ? ` [OPEN${open.dataset.sudo === "true" ? " · SUDO" : ""}]`
+          : "";
+
+        printLine(`${key.padEnd(14)} ${app.title}${stateLabel}`, open ? "warning" : "muted");
+      });
+
+      printLine('Launch an app with: launch <app>', "warning");
+    }
+
+    function launchApp(appName, options = {}) {
+      const normalizedName = String(appName).toLowerCase();
+
+      if (normalizedName === "terminal") {
+        createTerminalWindow();
+        return;
+      }
+
+      if (isAdminOnlyApp(normalizedName) && !state.isAdmin) {
+        printLine(`${availableApps[normalizedName]?.title || "This app"} is available only to the Admin account.`, "error");
+        return;
+      }
+
+      const app = availableApps[normalizedName];
+
+      if (!app) {
+        printLine(`Application not found: ${normalizedName}`, "error");
+        return;
+      }
+
+      const existing = getOpenWindow(normalizedName);
+
+      if (existing) {
+        const mode = existing.dataset.sudo === "true" ? "SUDO" : "standard";
+        restoreAndFocusWindow(existing, `${app.title} is already open in ${mode} mode.`);
+        return;
+      }
+
+      const sudo = Boolean(options.sudo);
+      state.windowCounter += 1;
+      state.highestZIndex += 1;
+
+      const windowElement = document.createElement("section");
+      windowElement.className = `app-window${sudo ? " sudo-window" : ""}`;
+      windowElement.dataset.app = normalizedName;
+      windowElement.dataset.sudo = String(sudo);
+      windowElement.style.zIndex = state.highestZIndex;
+
+      const offset = (state.windowCounter % 7) * 22;
+      windowElement.style.left = `${60 + offset}px`;
+      windowElement.style.top = `${45 + offset}px`;
+
+      windowElement.innerHTML = `
+        <header class="app-window-header">
+          <span class="app-window-title">${escapeHtml(app.title)}</span>
+          ${sudo ? '<span class="sudo-badge">ROOT / SUDO</span>' : ""}
+
+          <button class="window-control minimize" type="button" title="Minimize">—</button>
+          <button class="window-control maximize" type="button" title="Maximize">□</button>
+          <button class="window-control close" type="button" title="Close">×</button>
+        </header>
+
+        <div class="app-content"></div>
+      `;
+
+      elements.appLayer.appendChild(windowElement);
+      app.render(windowElement.querySelector(".app-content"), windowElement, { sudo });
+      bindWindowControls(windowElement, { closable: true });
+      makeWindowDraggable(windowElement);
+      bringWindowToFront(windowElement);
+      updateTaskbar();
+
+      printLine(`Launching ${normalizedName}${sudo ? " with sudo privileges" : ""}...`, sudo ? "warning" : "success");
+    }
+
+    function bindWindowControls(windowElement, { closable }) {
+      windowElement.addEventListener("mousedown", () => {
+        bringWindowToFront(windowElement);
+      });
+
+      windowElement.querySelector(".minimize")?.addEventListener("click", () => {
+        windowElement.classList.add("minimized");
+        updateTaskbar();
+        focusTopVisibleWindow();
+      });
+
+      windowElement.querySelector(".maximize")?.addEventListener("click", () => {
+        windowElement.classList.remove("minimized");
+        windowElement.classList.toggle("maximized");
+        bringWindowToFront(windowElement);
+        updateTaskbar();
+      });
+
+      const closeButton = windowElement.querySelector(".close");
+      if (closable && closeButton) {
+        closeButton.addEventListener("click", () => {
+          windowElement.remove();
+          updateTaskbar();
+          focusTopVisibleWindow();
+        });
+      }
+    }
+
+    function getOpenWindow(appName) {
+      return elements.appLayer.querySelector(`.app-window[data-app="${CSS.escape(appName)}"]`);
+    }
+
+    function restoreAndFocusWindow(windowElement, message = "") {
+      windowElement.classList.remove("minimized");
+      bringWindowToFront(windowElement);
+      updateTaskbar();
+      if (message) {
+        showNotification(message);
+        printLine(message, "warning");
+      }
+    }
+
+    function bringWindowToFront(windowElement) {
+      state.highestZIndex += 1;
+      windowElement.style.zIndex = state.highestZIndex;
+
+      elements.appLayer.querySelectorAll(".app-window").forEach((item) => {
+        item.classList.toggle("focused-window", item === windowElement);
+      });
+
+      updateTaskbar();
+    }
+
+    function closeTopApp() {
+      const windows = [...elements.appLayer.querySelectorAll('.app-window:not([data-app="terminal"])')];
+
+      if (!windows.length) {
+        printLine("No closable applications are currently open.", "muted");
+        return;
+      }
+
+      const topWindow = windows.reduce((highest, current) => {
+        return (Number(current.style.zIndex) || 0) > (Number(highest.style.zIndex) || 0)
+          ? current
+          : highest;
+      });
+
+      const appName = topWindow.dataset.app;
+      topWindow.remove();
+      updateTaskbar();
+      printLine(`Closed ${appName}.`, "success");
+      focusTopVisibleWindow();
+    }
+
+    function closeAllApps(includeTerminal = false) {
+      elements.appLayer.querySelectorAll(".app-window").forEach((windowElement) => {
+        if (includeTerminal || windowElement.dataset.app !== "terminal") {
+          windowElement.remove();
+        }
+      });
+      updateTaskbar();
+    }
+
+    function updateTaskbar() {
+      const terminalWindow = getOpenWindow("terminal");
+      const settingsWindow = getOpenWindow("settings");
+
+      document.querySelectorAll(".taskbar-app.pinned").forEach((button) => {
+        const appName = button.dataset.taskbarApp;
+        const windowElement = getOpenWindow(appName);
+        button.classList.toggle("running", Boolean(windowElement));
+        button.classList.toggle(
+          "active",
+          Boolean(windowElement && !windowElement.classList.contains("minimized") &&
+            Number(windowElement.style.zIndex) === state.highestZIndex)
+        );
+      });
+
+      elements.runningTaskbarApps.innerHTML = "";
+
+      const runningNames = [...elements.appLayer.querySelectorAll('.app-window:not([data-app="terminal"]):not([data-app="settings"])')].map(item => item.dataset.app);
+      const taskNames = [...new Set([...getPinnedAppKeys().filter(name => availableApps[name]), ...runningNames])];
+      taskNames.forEach((appName) => {
+          const windowElement = getOpenWindow(appName);
+          const app = availableApps[appName];
+          const button = document.createElement("button");
+
+          button.className =
+            `taskbar-app${windowElement ? " running" : ""}${windowElement?.dataset.sudo === "true" ? " sudo-task" : ""}`;
+
+          if (
+            windowElement && !windowElement.classList.contains("minimized") &&
+            Number(windowElement.style.zIndex) === state.highestZIndex
+          ) {
+            button.classList.add("active");
+          }
+
+          button.type = "button";
+          button.dataset.taskbarApp = appName;
+          button.innerHTML = `
+            <span class="taskbar-icon">${appIconMarkup(appName, app?.icon)}</span>
+            <span class="taskbar-label">${escapeHtml(app?.title || appName)}</span>
+            <span class="running-indicator"></span>
+          `;
+
+          button.addEventListener("click", () => windowElement ? toggleTaskbarWindow(windowElement) : launchApp(appName));
+          elements.runningTaskbarApps.appendChild(button);
+        });
+
+      document.querySelector('[data-taskbar-app="terminal"]')?.classList.toggle("running", Boolean(terminalWindow));
+      document.querySelector('[data-taskbar-app="settings"]')?.classList.toggle("running", Boolean(settingsWindow));
+    }
+
+    function toggleTaskbarWindow(windowElement) {
+      const isTop =
+        !windowElement.classList.contains("minimized") &&
+        Number(windowElement.style.zIndex) === state.highestZIndex;
+
+      if (isTop) {
+        windowElement.classList.add("minimized");
+        updateTaskbar();
+        return;
+      }
+
+      restoreAndFocusWindow(windowElement);
+      if (windowElement.dataset.app === "terminal") focusTerminal();
+    }
+
+    document.querySelectorAll(".taskbar-app.pinned").forEach((button) => {
+      button.addEventListener("click", () => {
+        const appName = button.dataset.taskbarApp;
+        const existing = getOpenWindow(appName);
+
+        if (existing) {
+          toggleTaskbarWindow(existing);
+        } else if (appName === "terminal") {
+          createTerminalWindow();
+        } else {
+          launchApp(appName);
+        }
+      });
+    });
+
+    function makeWindowDraggable(windowElement) {
+      const header = windowElement.querySelector(".app-window-header");
+      let isDragging = false;
+      let startPointerX = 0;
+      let startPointerY = 0;
+      let startWindowX = 0;
+      let startWindowY = 0;
+
+      header.addEventListener("pointerdown", (event) => {
+        if (event.target.closest("button")) return;
+        if (windowElement.classList.contains("maximized")) return;
+
+        isDragging = true;
+        bringWindowToFront(windowElement);
+        startPointerX = event.clientX;
+        startPointerY = event.clientY;
+        startWindowX = windowElement.offsetLeft;
+        startWindowY = windowElement.offsetTop;
+        header.setPointerCapture(event.pointerId);
+      });
+
+      header.addEventListener("pointermove", (event) => {
+        if (!isDragging) return;
+
+        const deltaX = event.clientX - startPointerX;
+        const deltaY = event.clientY - startPointerY;
+        const maxLeft = elements.appLayer.clientWidth - windowElement.offsetWidth;
+        const maxTop = elements.appLayer.clientHeight - windowElement.offsetHeight;
+
+        windowElement.style.left =
+          `${Math.min(Math.max(0, startWindowX + deltaX), Math.max(0, maxLeft))}px`;
+
+        windowElement.style.top =
+          `${Math.min(Math.max(0, startWindowY + deltaY), Math.max(0, maxTop))}px`;
+      });
+
+      const stopDragging = () => { isDragging = false; };
+      header.addEventListener("pointerup", stopDragging);
+      header.addEventListener("pointercancel", stopDragging);
+    }
+
+    function focusTerminal() {
+      const terminalWindow = getOpenWindow("terminal");
+      const input = document.getElementById("commandInput");
+      if (!terminalWindow || !input) return;
+
+      terminalWindow.classList.remove("minimized");
+      bringWindowToFront(terminalWindow);
+      input.focus();
+    }
+
+    function focusTopVisibleWindow() {
+      const windows = [...elements.appLayer.querySelectorAll(".app-window:not(.minimized)")];
+
+      if (!windows.length) {
+        elements.appLayer.querySelectorAll(".focused-window").forEach((item) => {
+          item.classList.remove("focused-window");
+        });
+        updateTaskbar();
+        return;
+      }
+
+      const topWindow = windows.reduce((highest, current) =>
+        (Number(current.style.zIndex) || 0) > (Number(highest.style.zIndex) || 0)
+          ? current
+          : highest
+      );
+
+      bringWindowToFront(topWindow);
+
+      if (topWindow.dataset.app === "terminal") {
+        document.getElementById("commandInput")?.focus();
+      }
+    }
+
+    document.addEventListener("click", (event) => {
+      if (
+        !elements.terminalScreen.classList.contains("hidden") &&
+        !event.target.closest("input, textarea, select, button") &&
+        !event.target.closest(".app-window")
+      ) {
+        focusTopVisibleWindow();
+      }
+    });
+
+    function calculateFromTerminal(expression) {
+      if (!expression) {
+        printLine("Usage: calc <mathematical expression>", "warning");
+        return;
+      }
+
+      try {
+        printLine(String(safeCalculate(expression)), "success");
+      } catch {
+        printLine("Unable to evaluate that expression.", "error");
+      }
+    }
+
+    function safeCalculate(expression) {
+      const normalized = expression.replace(/\^/g, "**");
+      if (!/^[0-9+\-*/%().\s*]+$/.test(normalized)) throw new Error("Invalid characters");
+
+      const result = Function(`"use strict"; return (${normalized});`)();
+      if (typeof result !== "number" || !Number.isFinite(result)) {
+        throw new Error("Invalid result");
+      }
+      return result;
+    }
+
+    function handleThemeCommand(theme) {
+      if (!theme) {
+        const current = document.body.classList.contains("light-theme")
+          ? "light"
+          : document.body.classList.contains("night-theme") ? "night" : "dark";
+        printLine(`Current theme: ${current}`);
+        return;
+      }
+
+      if (!["dark", "light", "night"].includes(theme.toLowerCase())) {
+        printLine("Usage: theme night|dark|light", "warning");
+        return;
+      }
+
+      setTheme(theme.toLowerCase());
+      printLine(`Theme changed to ${theme}.`, "success");
+    }
+
+    function setTheme(theme) {
+      document.body.classList.toggle("light-theme", theme === "light");
+      document.body.classList.toggle("night-theme", theme === "night");
+      localStorage.setItem("terminal-theme", theme);
+    }
+
+    function showCommandHistory() {
+      if (!state.commandHistory.length) {
+        printLine("No commands in history.", "muted");
+        return;
+      }
+
+      state.commandHistory.forEach((command, index) => {
+        printLine(`${String(index + 1).padStart(3, " ")}  ${command}`);
+      });
+    }
+
+    function printSystemStatus() {
+      const uptime = state.loginTime
+        ? formatDuration(Date.now() - state.loginTime.getTime())
+        : "00:00:00";
+
+      printLine("SYSTEM STATUS", "success");
+      printLine(`Effective user: ${state.isRootShell ? "root" : state.currentUser}`);
+      printLine("Host:           antigravity-os");
+      printLine("Network:        ONLINE");
+      printLine(`Session:        ${uptime}`);
+      printLine(`Open windows:   ${elements.appLayer.querySelectorAll(".app-window").length}`);
+      printLine(`Root shell:     ${state.isRootShell ? "ACTIVE" : "inactive"}`);
+      printLine(`Viewport:       ${window.innerWidth}x${window.innerHeight}`);
+    }
+
+    function simulateReboot() {
+      printLine("Stopping applications...", "warning");
+      closeAllApps(false);
+
+      setTimeout(() => printLine("Saving session state...", "warning"), 350);
+
+      setTimeout(() => {
+        clearTerminal();
+        state.isRootShell = false;
+        updateIdentityUI();
+        printBanner();
+        printLine("System reboot completed.", "success");
+        printLine(`Welcome back, ${state.currentUser}.`, "muted");
+      }, 900);
+    }
+
+    function simulateShutdown() {
+      const output = document.getElementById("terminalOutput");
+      if (output) printLine("Shutting down AntigravityOS...", "warning");
+      closeAllApps(false);
+
+      setTimeout(() => {
+        performLogout();
+        setLoginMessage("System shut down safely. Sign in to boot AntigravityOS.", "success");
+      }, 700);
+    }
+
+    function clearTerminal() {
+      const output = document.getElementById("terminalOutput");
+      if (output) output.innerHTML = "";
+    }
+
+    function autocompleteCommand() {
+      const input = document.getElementById("commandInput");
+      if (!input) return;
+
+      const value = input.value.trim();
+      if (!value) return;
+
+      const parts = value.split(/\s+/);
+
+      if (parts.length === 1) {
+        const matches = commands.filter((command) =>
+          command.startsWith(parts[0].toLowerCase())
+        );
+
+        if (matches.length === 1) input.value = matches[0] + " ";
+        else if (matches.length > 1) printLine(matches.join("    "), "muted");
+        return;
+      }
+
+      const commandIndex = parts[0].toLowerCase() === "sudo" ? 1 : 0;
+      const appIndex = commandIndex + 1;
+
+      if (
+        ["open", "launch"].includes(parts[commandIndex]?.toLowerCase()) &&
+        parts.length === appIndex + 1
+      ) {
+        const matches = Object.keys(availableApps).filter((name) =>
+          name.startsWith(parts[appIndex].toLowerCase())
+        );
+
+        if (matches.length === 1) {
+          const prefix = commandIndex === 1 ? "sudo " : "";
+          input.value = `${prefix}${parts[commandIndex]} ${matches[0]}`;
+        } else if (matches.length > 1) {
+          printLine(matches.join("    "), "muted");
+        }
+      }
+    }
+
+    function moveCursorToEnd(input) {
+      requestAnimationFrame(() => {
+        input.setSelectionRange(input.value.length, input.value.length);
+      });
+    }
+
+    function scrollTerminalToBottom() {
+      const output = document.getElementById("terminalOutput");
+      if (!output) return;
+
+      requestAnimationFrame(() => {
+        output.scrollTop = output.scrollHeight;
+      });
+    }
+
+    function renderHelpApp(container) {
+      container.innerHTML = `
+        <h2 class="app-title">Command Reference</h2>
+        <p class="app-description">
+          All applications launch through commands. Reopening an active app
+          restores and focuses its existing window instead of creating a duplicate.
+        </p>
+
+        <div class="command-list">
+          <code>launch &lt;app&gt;</code><span>Launch or focus an application.</span>
+          <code>sudo launch &lt;app&gt;</code><span>Launch an application with root styling.</span>
+          <code>sudo su</code><span>Enter a persistent root shell.</span>
+          <code>exit</code><span>Leave the root shell.</span>
+          <code>apps</code><span>List apps and show which are open.</span>
+          <code>launch adduser</code><span>Admin only: invite a user for first-time login.</span>
+          <code>logout</code><span>Open logout confirmation.</span>
+        </div>
+      `;
+    }
+
+    function renderNotesApp(container, windowElement, options = {}) {
+      const key = options.sudo ? "antigravity-root-notes" : "terminal-notes";
+      const savedNotes = localStorage.getItem(key) || "";
+
+      container.innerHTML = `
+        <h2 class="app-title">${options.sudo ? "Root Notes" : "Notes"}</h2>
+        <p class="app-description">
+          ${options.sudo
+            ? "This isolated note store represents root-owned data."
+            : "Notes are saved locally in this browser."}
+        </p>
+
+        <textarea class="app-textarea" id="notesTextArea" placeholder="Write something..."></textarea>
+
+        <div class="button-row">
+          <button class="app-button" id="saveNotesButton" type="button">Save notes</button>
+          <button class="app-button" id="clearNotesButton" type="button">Clear</button>
+        </div>
+      `;
+
+      const area = container.querySelector("#notesTextArea");
+      area.value = savedNotes;
+
+      container.querySelector("#saveNotesButton").addEventListener("click", () => {
+        localStorage.setItem(key, area.value);
+        showNotification(options.sudo ? "Root notes saved." : "Notes saved.");
+      });
+
+      container.querySelector("#clearNotesButton").addEventListener("click", () => {
+        area.value = "";
+        localStorage.removeItem(key);
+        showNotification(options.sudo ? "Root notes cleared." : "Notes cleared.");
+      });
+    }
+
+    function renderCalculatorApp(container) {
+      container.innerHTML = `
+        <h2 class="app-title">Calculator</h2>
+        <div id="calculatorDisplay" class="calculator-display">0</div>
+
+        <div class="calculator-grid">
+          ${["C","(",")","/","7","8","9","*","4","5","6","-","1","2","3","+","0",".","BACK","="]
+            .map((value) => `<button class="calculator-key" data-value="${value}">${
+              {"/":"÷","*":"×","-":"−","BACK":"⌫"}[value] || value
+            }</button>`).join("")}
+        </div>
+      `;
+
+      const display = container.querySelector("#calculatorDisplay");
+      let expression = "";
+
+      container.querySelectorAll(".calculator-key").forEach((button) => {
+        button.addEventListener("click", () => {
+          const value = button.dataset.value;
+
+          if (value === "C") {
+            expression = "";
+            display.textContent = "0";
+          } else if (value === "BACK") {
+            expression = expression.slice(0, -1);
+            display.textContent = expression || "0";
+          } else if (value === "=") {
+            try {
+              expression = String(safeCalculate(expression));
+              display.textContent = expression;
+            } catch {
+              display.textContent = "ERROR";
+              expression = "";
+            }
+          } else {
+            expression += value;
+            display.textContent = expression;
+          }
+        });
+      });
+    }
+
+    function renderFilesApp(container, windowElement, options = {}) {
+      const files = options.sudo
+        ? [
+            { icon: "⚠", name: "root.config" },
+            { icon: "▣", name: "etc" },
+            { icon: "▣", name: "var" },
+            { icon: "▣", name: "root" }
+          ]
+        : [
+            { icon: "▣", name: "System" },
+            ...Object.keys(getIDEFiles()).map((name) => ({ icon: "▤", name }))
+          ];
+
+      container.innerHTML = `
+        <h2 class="app-title">${options.sudo ? "Root Files" : "Files"}</h2>
+        <p class="app-description">
+          ${options.sudo ? "Privileged filesystem view." : "Persistent Antigravity IDE files."}
+        </p>
+
+        <div class="file-grid">
+          ${files.map((file) => `
+            <div class="file-item" data-file="${escapeHtml(file.name)}">
+              <span class="file-item-icon">${escapeHtml(file.icon)}</span>
+              ${escapeHtml(file.name)}
+            </div>
+          `).join("")}
+        </div>
+      `;
+
+      container.querySelectorAll(".file-item").forEach((item) => {
+        item.addEventListener("click", () => {
+          showNotification(item.dataset.file === "System" ? "System contains application data and IDE files." : `Open ${item.dataset.file} in Antigravity IDE.`);
+        });
+      });
+    }
+
+    function renderSystemApp(container, windowElement, options = {}) {
+      const uptime = state.loginTime
+        ? formatDuration(Date.now() - state.loginTime.getTime())
+        : "00:00:00";
+
+      container.innerHTML = `
+        <h2 class="app-title">System Information</h2>
+
+        <table class="info-table">
+          <tr><td>Operating system</td><td>AntigravityOS Web Edition</td></tr>
+          <tr><td>Version</td><td>2.0.0</td></tr>
+          <tr><td>Application mode</td><td>${options.sudo ? "ROOT / SUDO" : "Standard user"}</td></tr>
+          <tr><td>Effective shell user</td><td>${state.isRootShell ? "root" : escapeHtml(state.currentUser)}</td></tr>
+          <tr><td>Hostname</td><td>antigravity-os</td></tr>
+          <tr><td>Session uptime</td><td>${escapeHtml(uptime)}</td></tr>
+          <tr><td>Browser</td><td>${escapeHtml(navigator.userAgent)}</td></tr>
+          <tr><td>Window size</td><td>${window.innerWidth} × ${window.innerHeight}</td></tr>
+          <tr><td>Connection</td><td class="status-online">ONLINE</td></tr>
+        </table>
+      `;
+    }
+
+    function renderSettingsApp(container, windowElement, options = {}) {
+      const currentTheme = document.body.classList.contains("light-theme")
+        ? "light"
+        : document.body.classList.contains("night-theme") ? "night" : "dark";
+      const installedForSettings = (window.ANTIGRAVITY_OPTIONAL_APPS || []).filter((app) => getInstalledAppKeys().includes(app.key));
+
+      container.innerHTML = `
+        <h2 class="app-title">${options.sudo ? "System Settings" : "Settings"}</h2>
+        <p class="app-description">
+          ${options.sudo
+            ? "Running with elevated visual privileges."
+            : "Change the appearance of AntigravityOS."}
+        </p>
+
+        <label class="field-label" for="themeSelect">Interface theme</label>
+
+        <select id="themeSelect" class="app-select">
+          <option value="night">Night</option>
+          <option value="dark">Dark</option>
+          <option value="light">Light Terminal</option>
+        </select>
+
+        <div class="button-row">
+          <button id="applyThemeButton" class="app-button" type="button">Apply theme</button>
+          <button id="resetDataButton" class="app-button" type="button">Reset browser data</button>
+        </div>
+        <h3 class="app-title" style="margin-top:24px;font-size:14px">Taskbar</h3>
+        <div class="settings-row"><div class="settings-row-copy"><strong>Pin apps to taskbar</strong><p class="app-description" style="margin:5px 0 0">Choose which apps remain visible.</p></div><button id="openPinAppsButton" class="app-button" type="button">Open</button></div>
+        <div id="pinAppsPanel" class="hidden" style="margin-top:16px"><h4 style="margin:0 0 10px;color:var(--text);font-size:12px">Pin To Taskbar</h4><div id="taskbarPinOptions" class="settings-list">${Object.entries(availableApps).filter(([key]) => !isAdminOnlyApp(key) || state.isAdmin).map(([key,app]) => `<label><input type="checkbox" data-pin-app="${escapeHtml(key)}" ${getPinnedAppKeys().includes(key)?"checked":""}> <span>${escapeHtml(app.title)}</span></label>`).join("")}</div><button id="applyPinsButton" class="app-button" type="button" style="margin-top:12px">Apply taskbar pins</button></div>
+        <h3 class="app-title" style="margin-top:24px;font-size:14px">Apps</h3>
+        <p class="app-description">Manage optional applications installed for this user.</p>
+        <div class="settings-list">${installedForSettings.length ? installedForSettings.map((app) => `<div class="app-management-row" data-managed-app="${escapeHtml(app.key)}"><span class="app-management-icon">${appIconMarkup(app.key,app.icon)}</span><span>${escapeHtml(app.title)}</span><button class="dots-button" type="button" data-app-menu-button="${escapeHtml(app.key)}" title="App menu">⋯</button><div class="app-row-menu hidden" data-app-row-menu="${escapeHtml(app.key)}"><button class="app-button danger-button" type="button" data-settings-uninstall="${escapeHtml(app.key)}">Uninstall</button></div><div class="hidden" data-settings-progress="${escapeHtml(app.key)}" style="position:absolute;left:14px;right:14px;bottom:2px"><div class="install-progress"><div class="install-progress-bar"></div></div></div></div>`).join("") : '<div class="app-description" style="padding:14px">No optional apps installed.</div>'}</div>
+      `;
+
+      const select = container.querySelector("#themeSelect");
+      select.value = currentTheme;
+
+      container.querySelector("#applyThemeButton").addEventListener("click", () => {
+        setTheme(select.value);
+        showNotification(`Theme changed to ${select.value}.`);
+      });
+
+      container.querySelector("#openPinAppsButton").addEventListener("click", () => {
+        container.querySelector("#pinAppsPanel").classList.remove("hidden");
+        container.querySelector("#openPinAppsButton").closest(".settings-row").classList.add("hidden");
+      });
+
+      container.querySelectorAll("[data-app-menu-button]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const target = container.querySelector(`[data-app-row-menu="${CSS.escape(button.dataset.appMenuButton)}"]`);
+          container.querySelectorAll("[data-app-row-menu]").forEach((menu) => { if (menu !== target) menu.classList.add("hidden"); });
+          target.classList.toggle("hidden");
+        });
+      });
+
+      container.querySelectorAll("[data-settings-uninstall]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const key = button.dataset.settingsUninstall;
+          const row = container.querySelector(`[data-managed-app="${CSS.escape(key)}"]`);
+          const progress = row.querySelector(`[data-settings-progress="${CSS.escape(key)}"]`);
+          const bar = progress.querySelector(".install-progress-bar");
+          row.querySelector("[data-app-row-menu]").classList.add("hidden");
+          row.querySelector(".dots-button").disabled = true;
+          progress.classList.remove("hidden");
+          uninstallOptionalApp(key, (value) => { bar.style.width = `${value}%`; }, () => renderSettingsApp(container, windowElement, options));
+        });
+      });
+
+      container.querySelector("#applyPinsButton").addEventListener("click", () => {
+        savePinnedAppKeys([...container.querySelectorAll("[data-pin-app]:checked")].map(input => input.dataset.pinApp));
+        showNotification("Taskbar pins updated.");
+      });
+
+      container.querySelector("#resetDataButton").addEventListener("click", () => {
+        localStorage.removeItem("terminal-notes");
+        localStorage.removeItem("antigravity-root-notes");
+        localStorage.removeItem("terminal-theme");
+        setTheme("night");
+        showNotification("Browser data reset.");
+      });
+    }
+
+    function ideStorageKey() { return `antigravity-ide-files:${state.originalUser.toLowerCase()}`; }
+    function getIDEFiles() {
+      try { return JSON.parse(localStorage.getItem(ideStorageKey()) || '{"System/AntigravityIDE/welcome.txt":"Welcome to Antigravity IDE."}'); }
+      catch (error) { return { "System/AntigravityIDE/welcome.txt": "Welcome to Antigravity IDE." }; }
+    }
+    function saveIDEFiles(files) { localStorage.setItem(ideStorageKey(), JSON.stringify(files)); }
+
+    function renderIDEApp(container) {
+      let files = getIDEFiles();
+      let active = Object.keys(files)[0] || "System/AntigravityIDE/untitled.txt";
+      const draw = () => {
+        container.innerHTML = `<h2 class="app-title">Antigravity IDE</h2><div class="button-row"><button class="app-button" data-ide="new">New File</button><button class="app-button" data-ide="rename">Rename</button><button class="app-button" data-ide="save">Save</button><button class="app-button" data-ide="export">Export File</button><label class="app-button">Import Folder<input id="ideFolderInput" type="file" webkitdirectory multiple hidden></label></div><div style="display:grid;grid-template-columns:minmax(150px,25%) 1fr;gap:12px;margin-top:14px;min-height:300px"><div id="ideFiles" style="overflow:auto"></div><textarea id="ideEditor" class="app-textarea" spellcheck="false"></textarea></div>`;
+        const list=container.querySelector("#ideFiles"), editor=container.querySelector("#ideEditor");
+        Object.keys(files).sort().forEach(path=>{const b=document.createElement("button");b.className="file-item";b.style="width:100%;margin-bottom:6px;text-align:left";b.textContent=path;b.onclick=()=>{active=path;editor.value=files[path];};list.appendChild(b)}); editor.value=files[active]||"";
+        container.querySelector('[data-ide="save"]').onclick=()=>{files[active]=editor.value;saveIDEFiles(files);showNotification(`Saved ${active}`)};
+        container.querySelector('[data-ide="new"]').onclick=()=>{const name=prompt("New file path:","System/AntigravityIDE/untitled.txt")?.trim();if(name&&!files[name]){files[name]="";active=name;saveIDEFiles(files);draw()}};
+        container.querySelector('[data-ide="rename"]').onclick=()=>{const name=prompt("Rename file:",active)?.trim();if(name&&name!==active&&!files[name]){files[name]=files[active];delete files[active];active=name;saveIDEFiles(files);draw()}};
+        container.querySelector('[data-ide="export"]').onclick=()=>{files[active]=editor.value;saveIDEFiles(files);const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([files[active]],{type:"text/plain"}));a.download=active.split("/").pop();a.click();URL.revokeObjectURL(a.href)};
+        container.querySelector("#ideFolderInput").onchange=async e=>{for(const file of e.target.files){files[file.webkitRelativePath||file.name]=await file.text()}saveIDEFiles(files);active=Object.keys(files)[0];draw()};
+      }; draw();
+    }
+
+    function renderStoreApp(container) {
+      const descriptions = {audio:"Play local music and audio files.",video:"Play local video files.",docs:"Create and format documents.",sheets:"Build and save worksheets.",slides:"Create slide presentations and present them full-screen.",contacts:"Keep a local contact list.",archive:"Inspect archive file details.",pdf:"Inspect local PDF file details.",mail:"Write and save email drafts.",calendar:"View the current calendar date."};
+      const draw = () => {
+        const installed = getInstalledAppKeys();
+        const sorted = [...(window.ANTIGRAVITY_OPTIONAL_APPS || [])].sort((a, b) => Number(installed.includes(b.key)) - Number(installed.includes(a.key)) || a.title.localeCompare(b.title));
+        container.innerHTML = `<h2 class="app-title">Antigravity Store</h2><p class="app-description">Installed apps appear first. Select an app to view details.</p><div class="file-grid">${sorted.map(app=>`<button class="file-item" data-store-details="${escapeHtml(app.key)}"><span class="file-item-icon">${appIconMarkup(app.key,app.icon)}</span><strong>${escapeHtml(app.title)}</strong><div style="margin-top:8px;font-size:10px">${installed.includes(app.key)?"INSTALLED":"AVAILABLE"}</div></button>`).join("")}</div>`;
+        container.querySelectorAll("[data-store-details]").forEach(button=>button.onclick=()=>details(button.dataset.storeDetails));
+      }; draw();
+
+      function details(key) {
+        const app=(window.ANTIGRAVITY_OPTIONAL_APPS||[]).find(item=>item.key===key);if(!app)return;
+        const installed=getInstalledAppKeys().includes(key);
+        container.innerHTML=`<button class="app-button" data-back>← Store</button><div style="text-align:center;padding:clamp(20px,6vw,60px)"><div class="launcher-app-icon" style="margin:auto">${appIconMarkup(app.key,app.icon)}</div><h2 class="app-title" style="margin-top:18px">${escapeHtml(app.title)}</h2><p class="app-description">${escapeHtml(descriptions[key]||"A useful AntigravityOS application.")}</p><div class="button-row" style="justify-content:center">${installed?'<button class="app-button" data-open>OPEN</button><button class="app-button danger-button" data-uninstall>UNINSTALL</button>':'<button class="primary-button" style="max-width:260px" data-install>INSTALL</button>'}</div><div data-progress-wrap class="hidden" style="max-width:360px;margin:18px auto 0"><div class="install-progress"><div data-progress-bar class="install-progress-bar"></div></div><p data-progress class="app-description" style="margin-top:8px"></p></div></div>`;
+        container.querySelector("[data-back]").onclick=draw;
+        container.querySelector("[data-open]")?.addEventListener("click", () => launchApp(key));
+        container.querySelector("[data-uninstall]")?.addEventListener("click", () => {
+          const wrap=container.querySelector("[data-progress-wrap]"),bar=container.querySelector("[data-progress-bar]"),status=container.querySelector("[data-progress]");
+          wrap.classList.remove("hidden");container.querySelectorAll("[data-open],[data-uninstall]").forEach(button=>button.disabled=true);
+          uninstallOptionalApp(key,(value)=>{bar.style.width=`${value}%`;status.textContent=value<58?"Removing application files...":"Cleaning up system entries...";},()=>details(key));
+        });
+        container.querySelector("[data-install]")?.addEventListener("click", () => {
+          const button=container.querySelector("[data-install]"),wrap=container.querySelector("[data-progress-wrap]"),bar=container.querySelector("[data-progress-bar]"),status=container.querySelector("[data-progress]");
+          button.disabled=true;wrap.classList.remove("hidden");
+          const wait=Math.min(5000,2200+(window.ANTIGRAVITY_OPTIONAL_APPS||[]).findIndex(item=>item.key===key)*240);
+          runSteppedProgress(wait,(value,index)=>{bar.style.width=`${value}%`;status.textContent=value===23||value===58?"Verifying package...":value<76?"Downloading components...":"Finalizing installation...";},()=>{saveInstalledAppKeys([...getInstalledAppKeys(),key]);details(key);});
+        });
+      }
+    }
+
+    function renderAddUserApp(container) {
+      if (!state.isAdmin) {
+        container.innerHTML = '<p class="app-description">This application is available only to the Admin account.</p>';
+        return;
+      }
+
+      container.innerHTML = `
+        <h2 class="app-title">Add User</h2>
+        <p class="app-description">
+          Create a pending account. The user will choose their password from the First-Time Login tab.
+        </p>
+
+        <div class="field-group">
+          <label class="field-label" for="newUsernameInput">Username</label>
+          <input id="newUsernameInput" class="app-input" type="text" autocomplete="off" placeholder="username" />
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="newUserEmailInput">Email</label>
+          <input id="newUserEmailInput" class="app-input" type="email" autocomplete="off" placeholder="user@example.com" />
+        </div>
+        <div class="field-group"><label class="field-label" for="newUserCompanyInput">Account location</label><select id="newUserCompanyInput" class="app-select"><option value="local">Local</option>${getCompanies().map((company) => `<option value="${escapeHtml(company.id)}">${escapeHtml(company.name)} — ${escapeHtml(company.address)}</option>`).join("")}</select></div>
+
+        <button id="addUserButton" class="app-button" type="button">Add user</button>
+        <p id="addUserMessage" class="app-description" style="margin-top: 14px;"></p>
+      `;
+
+      const usernameInput = container.querySelector("#newUsernameInput");
+      const emailInput = container.querySelector("#newUserEmailInput");
+      const message = container.querySelector("#addUserMessage");
+      const companyInput = container.querySelector("#newUserCompanyInput");
+
+      container.querySelector("#addUserButton").addEventListener("click", () => {
+        const username = sanitizeUsername(usernameInput.value.trim());
+        const email = emailInput.value.trim().toLowerCase();
+
+        if (!username || username.toLowerCase() === "root") {
+          message.textContent = "Enter a valid username.";
+          return;
+        }
+        if (!isValidEmail(email)) {
+          message.textContent = "Enter a valid email address.";
+          return;
+        }
+        if (findAccount(username) || findAccount(email)) {
+          message.textContent = "That username or email is already registered.";
+          return;
+        }
+
+        const users = getLocalUsers();
+        users.push({ id: createId("user"), username, email, password: null, companyId: companyInput.value });
+        saveLocalUsers(users);
+        usernameInput.value = "";
+        emailInput.value = "";
+        message.textContent = `User ${username} added. They can now use First-Time Login.`;
+        showNotification(`User ${username} added.`);
+      });
+    }
+
+    function renderCompanyRegistryApp(container) {
+      if (!state.isAdmin) {
+        container.innerHTML = '<p class="app-description">This application is available only to the Admin account.</p>';
+        return;
+      }
+      const draw = () => {
+        const companies = getCompanies();
+        container.innerHTML = `
+          <h2 class="app-title">Company Registration</h2>
+          <p class="app-description">Register company names so server logins display the correct organization.</p>
+          <label class="field-label">Server type</label><select id="companyServerMode" class="app-select"><option value="official">AntigravityOS Server</option><option value="self">Self-Hosted</option></select>
+          <label class="field-label" style="margin-top:12px">Company name</label><input id="companyNameInput" class="app-input" placeholder="Company name">
+          <label id="companyAddressLabel" class="field-label" style="margin-top:12px">AntigravityOS domain</label><div class="terminal-field"><input id="companyAddressInput" placeholder="company"><span id="companyAddressSuffix" style="padding-right:12px;color:var(--muted)">.antigravity.os</span></div>
+          <button id="registerCompanyButton" class="app-button" style="margin-top:12px">Register company</button><p id="companyRegistryMessage" class="app-description" style="margin-top:10px"></p>
+          <h3 class="app-title" style="margin-top:22px;font-size:14px">Registered companies</h3><div class="settings-list">${companies.length ? companies.map(company=>`<div class="settings-row" style="padding:12px 14px"><div class="settings-row-copy"><strong>${escapeHtml(company.name)}</strong><div class="app-description" style="margin:4px 0 0">${escapeHtml(company.address)} · ${getLocalUsers().filter(user=>user.companyId===company.id).length} users</div></div><button class="app-button" data-export-company-users="${escapeHtml(company.id)}">Export Users</button></div>`).join("") : '<div class="app-description" style="padding:14px">No companies registered.</div>'}</div>`;
+        const mode=container.querySelector("#companyServerMode"),address=container.querySelector("#companyAddressInput"),suffix=container.querySelector("#companyAddressSuffix"),label=container.querySelector("#companyAddressLabel");
+        container.querySelectorAll("[data-export-company-users]").forEach((button)=>button.onclick=()=>{const company=companies.find(item=>item.id===button.dataset.exportCompanyUsers);if(!company)return;const users=getLocalUsers().filter(user=>user.companyId===company.id);const payload={company:{id:company.id,name:company.name,mode:company.mode,address:company.address},users,exportedAt:new Date().toISOString()};const link=document.createElement("a");link.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}));link.download=`${company.name.toLowerCase().replace(/[^a-z0-9]+/g,"-")}.users.json`;link.click();URL.revokeObjectURL(link.href);});
+        mode.onchange=()=>{const self=mode.value==="self";suffix.classList.toggle("hidden",self);label.textContent=self?"Self-hosted HTTP/HTTPS address":"AntigravityOS domain";address.placeholder=self?"https://server.company.com":"company";};
+        container.querySelector("#registerCompanyButton").onclick=()=>{const name=container.querySelector("#companyNameInput").value.trim(),raw=address.value.trim(),normalized=normalizeServerAddress(raw);const message=container.querySelector("#companyRegistryMessage");if(!name){message.textContent="Enter a company name.";return}if(mode.value==="official"&&!/^[a-z0-9-]+$/i.test(normalized)){message.textContent="Enter a valid AntigravityOS domain.";return}if(mode.value==="self"&&!/^(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?(?:\/.*)?$/i.test(normalized)){message.textContent="Enter a valid HTTP/HTTPS hostname.";return}const finalAddress=mode.value==="official"?`${normalized}.antigravity.os`:normalized;const next=getCompanies().filter(company=>!(company.mode===mode.value&&normalizeServerAddress(company.address)===finalAddress));next.push({id:createId("company"),name,mode:mode.value,address:finalAddress});saveCompanies(next);draw();showNotification("Company registered.");};
+      }; draw();
+    }
+
+    function renderPasswordResetRequestsApp(container) {
+      if (!state.isAdmin) { container.innerHTML='<p class="app-description">This application is available only to the Admin account.</p>'; return; }
+      const draw=()=>{const requests=getPasswordResetRequests();container.innerHTML=`<h2 class="app-title">Password Reset Requests</h2><p class="app-description">Approve or reject managed-user password resets.</p><div class="settings-list">${requests.length?requests.map(request=>`<div class="settings-row" style="padding:12px 14px"><div class="settings-row-copy"><strong>${escapeHtml(request.username)}</strong><div class="app-description" style="margin:4px 0 0">${escapeHtml(request.email||"")} · ${escapeHtml(request.status.toUpperCase())}</div></div>${request.status==="pending"?`<div class="button-row"><button class="app-button" data-reset-approve="${escapeHtml(request.id)}">Approve</button><button class="app-button danger-button" data-reset-reject="${escapeHtml(request.id)}">Reject</button></div>`:""}</div>`).join(""):'<div class="app-description" style="padding:14px">No password-reset requests.</div>'}</div>`;
+        container.querySelectorAll("[data-reset-approve]").forEach(button=>button.onclick=()=>{const requests=getPasswordResetRequests();const request=requests.find(item=>item.id===button.dataset.resetApprove);if(request){request.status="approved";request.resolvedAt=new Date().toISOString();savePasswordResetRequests(requests);draw();showNotification("Password reset approved.")}});
+        container.querySelectorAll("[data-reset-reject]").forEach(button=>button.onclick=()=>{const reason=prompt("Reason for rejection (optional):","")?.trim()||"";const requests=getPasswordResetRequests();const request=requests.find(item=>item.id===button.dataset.resetReject);if(request){request.status="rejected";request.reason=reason;request.resolvedAt=new Date().toISOString();savePasswordResetRequests(requests);draw();showNotification("Password reset rejected.")}});
+      };draw();
+    }
+
+    function companyMessagesKey() { return scopedKey("antigravity-company-messages"); }
+    function getCompanyMessages() { try { const messages=JSON.parse(localStorage.getItem(companyMessagesKey())||"[]");return Array.isArray(messages)?messages:[]; } catch(error){return [];} }
+    function saveCompanyMessages(messages) { localStorage.setItem(companyMessagesKey(),JSON.stringify(messages)); }
+
+    function renderCompanyContactsApp(container) {
+      const currentId = state.isAdmin ? "admin" : state.accountId;
+      const admin = AUTH_CONFIG.users.find((user) => user.username.toLowerCase() === "admin");
+      const directory = [{ id:"admin", username:admin.username, email:admin.email, role:"Admin" }, ...getLocalUsers().map((user) => ({ ...user, role:"User" }))];
+      const contacts = directory.filter((user) => user.id !== currentId);
+      let selectedId = contacts[0]?.id || null;
+
+      const draw = () => {
+        const selected = directory.find((user) => user.id === selectedId);
+        const messages = getCompanyMessages().filter((message) => [message.from,message.to].includes(currentId) && [message.from,message.to].includes(selectedId));
+        container.innerHTML = `<h2 class="app-title">Contacts</h2><p class="app-description">${escapeHtml(state.companyName || "Company")} directory and messaging.</p><div style="display:grid;grid-template-columns:minmax(150px,28%) minmax(0,1fr);gap:12px;min-height:340px"><div class="settings-list" style="overflow:auto">${contacts.length?contacts.map(user=>`<button class="settings-row" style="width:100%;color:var(--text);background:${user.id===selectedId?'var(--primary-soft)':'transparent'};border-width:0 0 1px;text-align:left" data-contact-id="${escapeHtml(user.id)}"><span class="app-management-icon">${appIconMarkup("profile","")}</span><span><strong>${escapeHtml(user.username)}</strong><small style="display:block;color:var(--muted);margin-top:3px">${escapeHtml(user.role)}</small></span></button>`).join(""):'<p class="app-description" style="padding:12px">No other users.</p>'}</div><div style="display:flex;flex-direction:column;min-width:0"><div style="padding:10px;border-bottom:1px solid var(--border)"><strong>${escapeHtml(selected?.username||"Select a contact")}</strong><div style="font-size:10px;color:var(--muted)">${escapeHtml(selected?.email||"")}</div></div><div id="companyChatMessages" style="flex:1;overflow:auto;padding:12px">${messages.map(message=>`<div style="max-width:78%;margin:7px ${message.from===currentId?'0 7px auto':'7px auto 7px 0'};padding:9px 11px;border-radius:10px;background:${message.from===currentId?'var(--primary-soft)':'var(--panel-secondary)'}">${escapeHtml(message.text)}<small style="display:block;color:var(--muted);margin-top:4px">${new Date(message.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</small></div>`).join("")}</div><form id="companyChatForm" class="auth-code-row" style="padding-top:10px"><input id="companyChatInput" class="app-input" placeholder="Message ${escapeHtml(selected?.username||"")}" ${selected?'':'disabled'}><button class="app-button" ${selected?'':'disabled'}>Send</button></form></div></div>`;
+        container.querySelectorAll("[data-contact-id]").forEach(button=>button.onclick=()=>{selectedId=button.dataset.contactId;draw();});
+        container.querySelector("#companyChatForm").onsubmit=event=>{event.preventDefault();const input=container.querySelector("#companyChatInput"),text=input.value.trim();if(!text||!selectedId)return;const all=getCompanyMessages();all.push({id:createId("message"),from:currentId,to:selectedId,text,time:new Date().toISOString()});saveCompanyMessages(all);draw();};
+        const messageArea=container.querySelector("#companyChatMessages");if(messageArea)messageArea.scrollTop=messageArea.scrollHeight;
+      }; draw();
+    }
+
+    function renderProfileApp(container) {
+      const staticAccount = AUTH_CONFIG.users.find((user) =>
+        user.username.toLowerCase() === state.originalUser.toLowerCase()
+      );
+      const account = getCurrentLocalAccount() || staticAccount;
+
+      if (!account) {
+        container.innerHTML = '<h2 class="app-title">Profile</h2><p class="app-description">Profile management is unavailable for this unmanaged account.</p>';
+        return;
+      }
+
+      if (state.isAdmin) {
+        container.innerHTML = `
+          <h2 class="app-title">Profile</h2>
+          <p class="app-description">Admin username and email are read-only. The password can be changed for this ${state.connectionMode === "server" ? "company" : "local system"}.</p>
+          <table class="info-table"><tr><td>Username</td><td>${escapeHtml(account.username)}</td></tr><tr><td>Email</td><td>${escapeHtml(account.email || "—")}</td></tr><tr><td>Account type</td><td>Administrator</td></tr></table>
+          <h3 class="app-title" style="margin-top:24px;font-size:14px">Change Admin password</h3>
+          <div class="terminal-field"><input id="adminCurrentPassword" type="password" placeholder="Current password"><button class="password-toggle" type="button" data-reveal="adminCurrentPassword" title="Show password" aria-label="Show password">◉</button></div>
+          <div class="terminal-field" style="margin-top:10px"><input id="adminNewPassword" type="password" placeholder="New password"><button class="password-toggle" type="button" data-reveal="adminNewPassword" title="Show password" aria-label="Show password">◉</button></div>
+          <div class="terminal-field" style="margin-top:10px"><input id="adminConfirmPassword" type="password" placeholder="Confirm new password"><button class="password-toggle" type="button" data-reveal="adminConfirmPassword" title="Show password" aria-label="Show password">◉</button></div>
+          <button id="changeAdminPasswordButton" class="app-button" style="margin-top:10px">Change password</button><p id="adminPasswordMessage" class="app-description" style="margin-top:10px"></p>`;
+        bindPasswordToggles(container);
+        container.querySelector("#changeAdminPasswordButton").onclick=()=>{const current=container.querySelector("#adminCurrentPassword").value,next=container.querySelector("#adminNewPassword").value,confirmation=container.querySelector("#adminConfirmPassword").value,message=container.querySelector("#adminPasswordMessage");if(current!==getAdminPassword())message.textContent="Current password is incorrect.";else if(next.length<8)message.textContent="New password must contain at least 8 characters.";else if(next!==confirmation)message.textContent="New passwords do not match.";else{localStorage.setItem(adminPasswordKey(),next);message.textContent="Admin password changed.";container.querySelectorAll('input[type="password"]').forEach(input=>input.value="");}};
+        return;
+      }
+
+      const pending = getProfileRequests().find((request) => request.userId === account.id);
+      const outcome = getRequestHistory().filter((item) => item.userId === account.id).at(-1);
+      const status = pending
+        ? "A profile-change request is awaiting Admin review."
+        : outcome?.status === "rejected" ? `Last request rejected: ${escapeHtml(outcome.reason)}`
+        : outcome?.status === "approved" ? "Your last profile change was approved." : "";
+
+      container.innerHTML = `
+        <h2 class="app-title">Profile</h2>
+        <table class="info-table"><tr><td>Username</td><td>${escapeHtml(account.username)}</td></tr><tr><td>Email</td><td>${escapeHtml(account.email || "—")}</td></tr></table>
+        <h3 class="app-title" style="margin-top:24px;font-size:14px;">Request profile change</h3>
+        <p class="app-description">Username and email changes require Admin approval.</p>
+        <input id="profileUsernameInput" class="app-input" value="${escapeHtml(account.username)}" placeholder="Username" ${pending ? "disabled" : ""} />
+        <input id="profileEmailInput" class="app-input" type="email" value="${escapeHtml(account.email || "")}" placeholder="Email" style="margin-top:10px;" ${pending ? "disabled" : ""} />
+        <button id="requestProfileChangeButton" class="app-button" type="button" style="margin-top:10px;" ${pending ? "disabled" : ""}>Submit request</button>
+        <p id="profileRequestMessage" class="app-description" style="margin-top:10px;">${status}</p>
+        <h3 class="app-title" style="margin-top:24px;font-size:14px;">Change password</h3>
+        <div class="terminal-field"><input id="currentProfilePassword" type="password" placeholder="Current password" /><button class="password-toggle" type="button" data-reveal="currentProfilePassword" title="Show password" aria-label="Show password">◉</button></div>
+        <div class="terminal-field" style="margin-top:10px;"><input id="newProfilePassword" type="password" placeholder="New password" /><button class="password-toggle" type="button" data-reveal="newProfilePassword" title="Show password" aria-label="Show password">◉</button></div>
+        <div class="terminal-field" style="margin-top:10px;"><input id="confirmProfilePassword" type="password" placeholder="Confirm new password" /><button class="password-toggle" type="button" data-reveal="confirmProfilePassword" title="Show password" aria-label="Show password">◉</button></div>
+        <button id="changeProfilePasswordButton" class="app-button" type="button" style="margin-top:10px;">Change password</button>
+        <p id="profilePasswordMessage" class="app-description" style="margin-top:10px;"></p>`;
+
+      bindPasswordToggles(container);
+      container.querySelector("#requestProfileChangeButton")?.addEventListener("click", () => submitProfileRequest(container, account));
+      container.querySelector("#changeProfilePasswordButton")?.addEventListener("click", () => changeProfilePassword(container, account));
+    }
+
+    function submitProfileRequest(container, account) {
+      const username = sanitizeUsername(container.querySelector("#profileUsernameInput").value.trim());
+      const email = container.querySelector("#profileEmailInput").value.trim().toLowerCase();
+      const message = container.querySelector("#profileRequestMessage");
+      if (!username || !isValidEmail(email)) {
+        message.textContent = "Enter a valid username and email.";
+        return;
+      }
+      if (username === account.username && email === account.email) {
+        message.textContent = "Change at least one profile field.";
+        return;
+      }
+      const conflict = [...AUTH_CONFIG.users, ...getLocalUsers()].find((user) =>
+        user.id !== account.id && (user.username.toLowerCase() === username.toLowerCase() || String(user.email).toLowerCase() === email)
+      );
+      if (conflict) {
+        message.textContent = "That username or email is already in use.";
+        return;
+      }
+      const requests = getProfileRequests();
+      requests.push({ id: createId("request"), userId: account.id, currentUsername: account.username, currentEmail: account.email, requestedUsername: username, requestedEmail: email, createdAt: new Date().toISOString() });
+      saveProfileRequests(requests);
+      renderProfileApp(container);
+      showNotification("Profile change requested.");
+    }
+
+    function changeProfilePassword(container, account) {
+      const current = container.querySelector("#currentProfilePassword").value;
+      const next = container.querySelector("#newProfilePassword").value;
+      const confirmation = container.querySelector("#confirmProfilePassword").value;
+      const message = container.querySelector("#profilePasswordMessage");
+      if (current !== account.password) message.textContent = "Current password is incorrect.";
+      else if (next.length < 8) message.textContent = "New password must contain at least 8 characters.";
+      else if (next !== confirmation) message.textContent = "New passwords do not match.";
+      else {
+        const users = getLocalUsers();
+        const index = users.findIndex((user) => user.id === account.id);
+        if (index < 0) return;
+        users[index].password = next;
+        saveLocalUsers(users);
+        message.textContent = "Password changed successfully.";
+        container.querySelectorAll('[id$="ProfilePassword"]').forEach((input) => { input.value = ""; });
+      }
+    }
+
+    function renderProfileRequestsApp(container) {
+      if (!state.isAdmin) {
+        container.innerHTML = '<p class="app-description">This application is available only to the Admin account.</p>';
+        return;
+      }
+      const requests = getProfileRequests();
+      container.innerHTML = `<h2 class="app-title">Profile Change Requests</h2><p class="app-description">Approve or reject requested username and email changes.</p>${requests.length ? requests.map((request) => `
+        <div class="file-item" style="margin-bottom:12px;cursor:default;"><strong>${escapeHtml(request.currentUsername)}</strong><div style="margin-top:8px;">Username: ${escapeHtml(request.currentUsername)} → ${escapeHtml(request.requestedUsername)}</div><div style="margin-top:5px;">Email: ${escapeHtml(request.currentEmail || "—")} → ${escapeHtml(request.requestedEmail)}</div><div class="button-row"><button class="app-button" data-approve-request="${escapeHtml(request.id)}">Approve</button><button class="app-button danger-button" data-reject-request="${escapeHtml(request.id)}">Reject</button></div></div>`).join("") : '<p class="app-description">No pending requests.</p>'}`;
+
+      container.querySelectorAll("[data-approve-request]").forEach((button) => button.addEventListener("click", () => resolveProfileRequest(container, button.dataset.approveRequest, true)));
+      container.querySelectorAll("[data-reject-request]").forEach((button) => button.addEventListener("click", () => resolveProfileRequest(container, button.dataset.rejectRequest, false)));
+    }
+
+    function resolveProfileRequest(container, requestId, approved) {
+      const request = getProfileRequests().find((item) => item.id === requestId);
+      if (!request) return;
+      let reason = "";
+      if (!approved) {
+        reason = window.prompt("Reason for rejection:", "")?.trim() || "";
+        if (!reason) {
+          showNotification("A rejection reason is required.");
+          return;
+        }
+      } else {
+        const users = getLocalUsers();
+        const index = users.findIndex((user) => user.id === request.userId);
+        const conflict = [...AUTH_CONFIG.users, ...users].find((user) => user.id !== request.userId && (user.username.toLowerCase() === request.requestedUsername.toLowerCase() || String(user.email).toLowerCase() === request.requestedEmail.toLowerCase()));
+        if (index < 0 || conflict) {
+          showNotification(index < 0 ? "Account no longer exists." : "Username or email is now in use.");
+          return;
+        }
+        users[index].username = request.requestedUsername;
+        users[index].email = request.requestedEmail;
+        saveLocalUsers(users);
+      }
+      saveProfileRequests(getProfileRequests().filter((item) => item.id !== request.id));
+      const history = getRequestHistory();
+      history.push({ ...request, status: approved ? "approved" : "rejected", reason, resolvedAt: new Date().toISOString() });
+      saveRequestHistory(history);
+      renderProfileRequestsApp(container);
+      showNotification(`Profile change ${approved ? "approved" : "rejected"}.`);
+    }
+
+    function updateClock() {
+      const now = new Date();
+      elements.sessionUserDisplay.textContent = now.toLocaleString([], {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function formatDuration(milliseconds) {
+      const totalSeconds = Math.floor(milliseconds / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      return [
+        String(hours).padStart(2, "0"),
+        String(minutes).padStart(2, "0"),
+        String(seconds).padStart(2, "0")
+      ].join(":");
+    }
+
+    let notificationTimeout;
+
+    function showNotification(message) {
+      clearTimeout(notificationTimeout);
+      elements.notification.textContent = message;
+      elements.notification.classList.add("show");
+
+      notificationTimeout = setTimeout(() => {
+        elements.notification.classList.remove("show");
+      }, 2500);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function initialize() {
+      if (localStorage.getItem(RESET_MARKER_KEY) !== "complete") {
+        [
+          LOCAL_USERS_KEY,
+          COMPANIES_KEY,
+          PASSWORD_RESET_REQUESTS_KEY,
+          REQUESTS_KEY,
+          REQUEST_HISTORY_KEY
+        ].forEach((key) => localStorage.removeItem(key));
+        [...Array(localStorage.length)].map((_, index) => localStorage.key(index)).filter(Boolean).forEach((key) => {
+          if (key.startsWith("antigravity-installed-apps:") || key.startsWith("antigravity-pinned-apps:") || key.startsWith("antigravity-ide-files:")) localStorage.removeItem(key);
+        });
+        localStorage.setItem(RESET_MARKER_KEY, "complete");
+      }
+      const savedTheme = localStorage.getItem("terminal-theme");
+      setTheme(["night", "dark", "light"].includes(savedTheme) ? savedTheme : "night");
+
+      updateClock();
+      setInterval(updateClock, 30000);
+      elements.identityInput.focus();
+    }
+
+    initialize();
+  </script>
+</body>
+</html>
