@@ -154,6 +154,23 @@ detail Back control remains fixed above the scrolling detail content.
 
 ### 2026-07-16
 
+- Reworked Sheets cell interaction with a visible active-cell outline,
+  click/focus selection, arrow-key movement, internal copy/cut/paste shortcuts,
+  and drag-and-drop movement between cells. Selected cells retain formulas,
+  formatting, borders, and embedded images when moved.
+- Added photo insertion to Docs at the current editing position.
+- Added photo insertion to selected Sheets cells.
+- Added multi-file photo/video insertion to Slides, removal controls in edit
+  mode, synchronized persistence in saved slide data, and media rendering while
+  presenting and navigating between slides.
+- Files modified: `System/Resources/apps.js` and both handoff files. The active
+  catalog was synchronized with the browser-only edition.
+- Tests performed: Both active catalog files are byte-identical and passed
+  JavaScript syntax validation.
+- Known follow-up: Browser/MySQL storage quotas limit the size and number of
+  embedded image/video data URLs; interactive drag, keyboard, and fullscreen
+  tests are still required in a browser.
+
 - Improved Settings theme selectors and renamed the visible Dark theme to
   **Midnight**. Theme choices now display only Night, Midnight, and Light.
 - Redesigned Light theme surfaces, contrast, inputs, window chrome, and shadows.
