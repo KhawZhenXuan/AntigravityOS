@@ -135,6 +135,17 @@ the running app to change.
 - PDF Viewer (file information/selection prototype, not a full PDF renderer)
 - Calendar
 
+Docs and Sheets expose visible **Import Media** buttons and accept image files
+dragged from the computer onto the document page or a target sheet cell.
+Slides exposes a visible **Import Media** button and accepts supported media
+files dragged directly onto the current slide.
+Imported media objects can be selected, moved, and resized. Slides uses
+free-positioned media with a resize handle; Docs media can be reordered within
+the document flow and resized; Sheets media can be resized and moved between
+cells. Sheets supports rectangular multi-cell selection with pointer dragging
+or Shift-click and uses different cursors for cell selection, editing, and
+dragging.
+
 Slides presentation mode is read-only and supports Left/Right, Page Up/Page
 Down, Home/End, and Space keyboard navigation while fullscreen. The Store uses
 a fixed title/description header and a separately scrolling app list; its app
@@ -153,6 +164,35 @@ detail Back control remains fixed above the scrolling detail content.
 ## Change log
 
 ### 2026-07-16
+
+- Added selectable, movable, and resizable imported media objects to Docs,
+  Slides, and Sheets. Slides media supports free positioning within the slide;
+  Docs media can be dragged to another document position; Sheets media can be
+  moved to another cell without moving the cell's other contents.
+- Added rectangular multi-cell selection to Sheets using pointer dragging or
+  Shift-click. Bold, fill color, and border operations apply across the active
+  selection.
+- Added distinct spreadsheet cursor states: cell selection, text editing,
+  media/cell movement, and media resizing.
+- Files modified: `System/Resources/apps.js` and both handoff files; the active
+  browser-only and InfinityFree catalogs were synchronized and passed
+  JavaScript syntax/parity checks.
+
+- Standardized the Docs, Slides, and Sheets file-picker button label to
+  **Import Media**. Supported media types remain photos for Docs/Sheets and
+  photos/videos for Slides.
+
+- Fixed local media drag-and-drop: Docs now imports dropped photos at the
+  editing position, Slides imports dropped photos/videos onto the current
+  slide, and Sheets imports a dropped photo into the target cell without
+  breaking the existing cell-to-cell move behavior.
+- Added clearly visible **Import Media** buttons, with explanatory tooltips and
+  drag-target feedback.
+- Files modified: `System/Resources/apps.js` and both handoff files. The active
+  catalog was synchronized with the browser-only edition.
+- Tests performed: both active catalog files are byte-identical and passed
+  JavaScript syntax validation. Interactive browser drag/drop testing is still
+  required.
 
 - Reworked Sheets cell interaction with a visible active-cell outline,
   click/focus selection, arrow-key movement, internal copy/cut/paste shortcuts,
@@ -329,6 +369,10 @@ These are known limitations, not promises that work has been scheduled:
   do not fully render or extract those file formats.
 - The UI still needs a complete browser regression pass at desktop and mobile
   sizes after future edits.
+- Local-file picker and operating-system drag/drop behavior still needs an
+  interactive browser regression pass for Docs, Slides, and Sheets.
+- Media movement/resizing and Sheets pointer-range selection still need a full
+  interactive desktop/mobile browser regression pass.
 - No automated test suite is currently included.
 
 ## Important browser-storage keys
