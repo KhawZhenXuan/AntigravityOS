@@ -66,6 +66,7 @@ the running app to change.
 - Password visibility controls.
 - Password reset request, Admin approval/rejection, and completion flows.
 - Logout confirmation dialog.
+- Boot duration scales with installed apps but is capped at 8 seconds.
 
 ### Desktop and windows
 
@@ -77,6 +78,8 @@ the running app to change.
   and resized.
 - Application windows are draggable, resizable, minimizable, maximizable, and
   focusable.
+- Maximized application windows fill the complete desktop application layer;
+  restoring returns them to their previous window dimensions.
 - Applications use a single-instance model. Opening an already-running app
   restores and focuses its existing window instead of creating a duplicate.
 - Running apps appear on the taskbar; apps may also be pinned through Settings.
@@ -102,6 +105,8 @@ the running app to change.
 - Help
 - Mail (permanent, pinned internal mail with inbox, sent mail, compose, replies,
   deletion, cross-company delivery, autocomplete, and unread badges)
+- Gravity Web with search/address navigation, multiple tabs, back/reload, an
+  embedded page view, and external-browser fallback.
 - Antigravity IDE with virtual files, import, export, save, rename, and new file
 - Antigravity Store for optional application installation/uninstallation
 - Files
@@ -125,10 +130,15 @@ the running app to change.
 - Docs
 - Sheets
 - Slides
-- Contacts
+- Gravity Chat (directory-based internal messaging with unread badges)
 - Archive Viewer
 - PDF Viewer (file information/selection prototype, not a full PDF renderer)
 - Calendar
+
+Slides presentation mode is read-only and supports Left/Right, Page Up/Page
+Down, Home/End, and Space keyboard navigation while fullscreen. The Store uses
+a fixed title/description header and a separately scrolling app list; its app
+detail Back control remains fixed above the scrolling detail content.
 
 ### Data and account management
 
@@ -141,6 +151,78 @@ the running app to change.
 - `System/Resources/DATA_STORAGE.md` documents the browser-storage model.
 
 ## Change log
+
+### 2026-07-16
+
+- Improved Settings theme selectors and renamed the visible Dark theme to
+  **Midnight**. Theme choices now display only Night, Midnight, and Light.
+- Redesigned Light theme surfaces, contrast, inputs, window chrome, and shadows.
+- Added synchronized per-user accent-color storage and a Settings control
+  beneath Themes.
+- Kept the taskbar visible while Apps is open. Apps now toggles closed when its
+  button is pressed again, and any taskbar app click closes the Apps overlay.
+- Added built-in **Gravity Web** with URL/search input, tabs, back, reload,
+  embedded browsing, and an external-browser fallback for sites that block
+  iframes.
+- Added safe URL detection in Mail and Gravity Chat. Normal link clicks open
+  Gravity Web; Ctrl/Cmd-click opens the regular browser in a new tab.
+- Files modified: `index.html`, `System/Resources/apps.js`, and both handoff
+  files. Matching changes were applied to the browser-only edition.
+- Tests performed: Both HTML entry points and both active app catalogs passed
+  JavaScript syntax validation and catalog parity checks.
+- Known follow-up: Embedded site compatibility depends on each website's frame
+  policy; full interactive browser regression testing remains required.
+
+- Capped boot waits at 8 seconds and made maximized app windows fill the entire
+  desktop application layer with edge-to-edge sizing and no resize handle.
+- Added Gravity Chat email autocomplete using the shared account directory.
+- Added Docs page-size selection for A4, Letter, Legal, A5, and Executive;
+  added explicit Ctrl/Cmd+Z, Ctrl/Cmd+Y, and Ctrl/Cmd+Shift+Z handling.
+- Added Sheets gridlines on every cell, Excel-style all/none/top/bottom/left/
+  right border controls, undo/redo buttons and shortcuts, and a labeled,
+  full-size Fill color control.
+- Added Slides undo/redo history, buttons and keyboard shortcuts, and changed
+  the small color input into a labeled Background control.
+- Files modified: `index.html`, `System/Resources/apps.js`, and both handoff
+  files. Matching changes were applied to the browser-only edition.
+- Tests performed: Both HTML entry points and both active app catalogs passed
+  JavaScript syntax validation; catalog files are synchronized.
+- Known follow-up: Interactive browser regression testing is still required.
+
+- Upgraded Docs with document styles, font sizing, alignment, lists, colors,
+  undo/redo, word counts, saving, HTML export, and printing.
+- Upgraded Sheets to a 30-row by 12-column workbook with cell selection,
+  formula bar, arithmetic/cell references, SUM/AVERAGE/MIN/MAX ranges, bold and
+  fill formatting, saving, clearing, and CSV export.
+- Expanded Slides with duplication, reordering, background colors, saving,
+  fullscreen read-only presentation, keyboard navigation, and slide counts.
+- Renamed Contacts to **Gravity Chat**. It uses the Mail account directory,
+  adds contacts by registered email, stores synchronized conversations,
+  displays signed-in username/company, marks opened messages read, and supplies
+  taskbar unread counts. The previous server-only Contacts renderer is no
+  longer substituted.
+- Upgraded Calendar with month navigation and persistent events, tasks, and
+  reminders. Added runtime account/directory hooks for optional apps.
+- Files modified: `index.html`, `System/Resources/apps.js`,
+  `System/Resources/DATA_STORAGE.md`, and both handoff files. Matching changes
+  were applied to the browser-only edition.
+- Tests performed: All active JavaScript and both HTML entry-point scripts
+  passed syntax checks; the two active app catalogs are synchronized.
+- Known follow-up: Full interactive browser testing remains required.
+
+- Requested: Fix keyboard navigation and editing in fullscreen Slides, keep the
+  Antigravity Store heading visible while its catalog scrolls, and keep a
+  shorter **Back** control visible on app detail pages.
+- Changed: Slides now enters a read-only presentation state with previous/next
+  keyboard controls and a slide counter. Store catalog and detail screens now
+  use fixed headers with independently scrolling content.
+- Files modified: `index.html`, `System/Resources/apps.js`, and both project
+  handoff files. Equivalent changes were made in the browser-only edition.
+- Tests performed: JavaScript syntax and browser/InfinityFree source parity
+  were checked. Interactive browser testing was attempted but the local browser
+  connection was blocked by a filesystem permission error.
+- Known follow-up: Verify fullscreen keyboard navigation and Store scrolling in
+  a browser on desktop and mobile layouts.
 
 ### Work completed before 2026-07-15
 

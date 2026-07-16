@@ -39,6 +39,14 @@ used for server-mode login.
 - `antigravity-installed-apps:<username>`: Optional apps installed by a user.
 - `antigravity-pinned-apps:<username>`: Apps pinned to that user's taskbar.
 - `antigravity-ide-files:<username>`: Antigravity IDE virtual files.
+- `antigravity-gravity-chat-messages`: Shared Gravity Chat conversations and
+  per-recipient read state.
+- `antigravity-gravity-chat-contacts:<account-id>`: Gravity Chat contacts added
+  by each account.
+- `antigravity-calendar-v2:<account-id>`: Calendar events, tasks, and reminders.
+- `ag-docs-v2:<account-id>` and `ag-sheets-v2:<account-id>`: Saved productivity
+  documents and workbooks.
+- `antigravity-accent:<tenant>:<username>`: Per-user interface accent color.
 
 The Admin **Company Registration** app exposes an **Export Users** button for
 each company. It downloads a separate `.users.json` file using the sample format

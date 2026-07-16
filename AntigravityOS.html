@@ -620,9 +620,13 @@
     }
 
     .app-window.maximized {
-      inset: 12px !important;
-      width: auto !important;
-      height: auto !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none !important;
+      max-height: none !important;
+      border-radius: 0 !important;
+      resize: none !important;
     }
 
     .app-window-header {
@@ -669,6 +673,13 @@
       padding: 20px;
     }
 
+    .app-content.store-app-content { min-height: 0; overflow: hidden; padding: 0; }
+    .store-app-shell { height: 100%; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .store-fixed-header { flex: 0 0 auto; padding: 20px 20px 0; border-bottom: 1px solid var(--border); background: var(--panel); }
+    .store-fixed-header .app-description,
+    .store-fixed-header .app-button { margin-bottom: 16px; }
+    .store-scroll-region { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px; overscroll-behavior: contain; }
+
     .app-title {
       margin: 0 0 16px;
       color: var(--primary);
@@ -693,6 +704,8 @@
       color: var(--text);
       background: rgba(0, 0, 0, 0.24);
     }
+
+    .app-select option { color: var(--text); background: var(--panel-secondary); }
 
     .app-input:focus,
     .app-textarea:focus,
@@ -847,15 +860,13 @@
     /* Light theme */
 
     body.light-theme {
-      --background: #edf2ed;
-      --panel: rgba(249, 252, 249, 0.96);
-      --panel-secondary: #ffffff;
-      --text: #17231a;
-      --muted: #68766b;
-      --primary: #11883a;
-      --primary-soft: rgba(17, 136, 58, 0.1);
-      --border: rgba(17, 92, 40, 0.2);
-      --shadow: 0 24px 80px rgba(30, 60, 40, 0.16);
+      --background: #eef1f5;
+      --panel: rgba(255, 255, 255, 0.98);
+      --panel-secondary: #f6f7f9;
+      --text: #1f2328;
+      --muted: #626b77;
+      --border: rgba(31, 35, 40, 0.18);
+      --shadow: 0 20px 55px rgba(35, 43, 54, 0.18);
     }
 
     body.light-theme .primary-button {
@@ -863,8 +874,14 @@
     }
 
     body.light-theme .app-window {
-      background: rgba(249, 252, 249, 0.98);
+      background: rgba(255, 255, 255, 0.99);
     }
+    body.light-theme .desktop-topbar,
+    body.light-theme .taskbar,
+    body.light-theme .app-window-header { background:#f7f8fa; }
+    body.light-theme .app-select,
+    body.light-theme .app-input,
+    body.light-theme .app-textarea { background:#fff; }
 
     /* Discord-inspired Night surfaces with the existing green accent. */
     body.night-theme {
@@ -1063,6 +1080,8 @@
     }
 
     .taskbar {
+      position: relative;
+      z-index: 46000;
       min-height: 54px;
       display: flex;
       align-items: center;
@@ -1151,7 +1170,7 @@
 
     .app-launcher {
       position: fixed;
-      inset: 0;
+      inset: 0 0 54px;
       z-index: 45000;
       display: flex;
       flex-direction: column;
@@ -1847,6 +1866,7 @@
     const availableApps = {
       help: { title: "Help", icon: "?", render: renderHelpApp },
       mail: { title: "Mail", icon: "✉", render: renderMailApp },
+      web: { title: "Gravity Web", icon: "◎", render: renderGravityWebApp },
       ide: { title: "Antigravity IDE", icon: "</>", render: renderIDEApp },
       store: { title: "Antigravity Store", icon: "🛍", render: renderStoreApp },
       files: { title: "Files", icon: "▣", render: renderFilesApp },
@@ -2095,6 +2115,22 @@
       return directory.find((account) => account.companyId === "local" && account.username.toLowerCase() === state.originalUser.toLowerCase()) || null;
     }
 
+    window.ANTIGRAVITY_APP_RUNTIME = {
+      getSession: () => {
+        const account = getCurrentMailAccount();
+        return {
+          id: account?.id || state.accountId || `local-${state.originalUser}`,
+          username: account?.username || state.originalUser,
+          email: account?.email || "",
+          companyId: account?.companyId || state.companyId || "local",
+          companyName: account?.companyId === "local" ? "Local" : (account?.companyName || state.companyName || "Company")
+        };
+      },
+      getDirectory: () => getMailDirectory().map(({ id, username, email, companyId, companyName }) => ({ id, username, email, companyId, companyName: companyId === "local" ? "Local" : companyName })),
+      refreshTaskbar: () => updateTaskbar(),
+      openUrl: (url, external = false) => openGravityWeb(url, external)
+    };
+
     function getMasterAdminEmail() {
       return String(AUTH_CONFIG.users.find((user) => user.username.toLowerCase() === "admin")?.email || "").toLowerCase();
     }
@@ -2245,6 +2281,7 @@
     function saveInstalledAppKeys(keys) {
       localStorage.setItem(installedAppsKey(), JSON.stringify([...new Set(keys)]));
       refreshInstalledApps();
+      applyAccentColor();
     }
 
     function pinnedAppsKey() { return `antigravity-pinned-apps:${tenantStorageId()}:${state.originalUser.toLowerCase()}`; }
@@ -2256,9 +2293,7 @@
       const installed = getInstalledAppKeys();
       (window.ANTIGRAVITY_OPTIONAL_APPS || []).forEach((app) => {
         if (installed.includes(app.key)) {
-          availableApps[app.key] = app.key === "contacts" && state.connectionMode === "server"
-            ? { ...app, render: renderCompanyContactsApp }
-            : app;
+          availableApps[app.key] = app;
         }
       });
     }
@@ -2563,7 +2598,7 @@
       elements.runningTaskbarApps.innerHTML = "";
       refreshInstalledApps();
 
-      const wait = Math.min(20000, 2000 + getInstalledAppKeys().length * 1200);
+      const wait = Math.min(8000, 1500 + getInstalledAppKeys().length * 650);
       runSteppedProgress(wait, (progress) => {
         elements.bootProgressBar.style.width = `${progress}%`;
         elements.bootStatus.textContent = progress < 35 ? "Loading system services..." : progress < 75 ? "Loading installed applications..." : "Preparing desktop...";
@@ -2733,6 +2768,7 @@
 
     elements.appsButton.addEventListener("click", () => {
       closeStartMenu();
+      if (!elements.appLauncher.classList.contains("hidden")) { closeAppLauncher(); focusTopVisibleWindow(); return; }
       renderAppLauncher();
       elements.appLauncher.classList.remove("hidden");
       elements.appsButton.setAttribute("aria-expanded", "true");
@@ -3243,6 +3279,8 @@
       taskNames.forEach((appName) => {
           const windowElement = getOpenWindow(appName);
           const app = availableApps[appName];
+          let badgeCount = 0;
+          try { badgeCount = Number(app?.badge?.() || 0); } catch (error) { badgeCount = 0; }
           const button = document.createElement("button");
 
           button.className =
@@ -3259,12 +3297,12 @@
           button.dataset.taskbarApp = appName;
           button.innerHTML = `
             <span class="taskbar-icon">${appIconMarkup(appName, app?.icon)}</span>
-            ${appName === "mail" && getUnreadMailCount() ? `<span class="taskbar-badge">${getUnreadMailCount() > 99 ? "99+" : getUnreadMailCount()}</span>` : ""}
+            ${(appName === "mail" ? getUnreadMailCount() : badgeCount) ? `<span class="taskbar-badge">${(appName === "mail" ? getUnreadMailCount() : badgeCount) > 99 ? "99+" : (appName === "mail" ? getUnreadMailCount() : badgeCount)}</span>` : ""}
             <span class="taskbar-label">${escapeHtml(app?.title || appName)}</span>
             <span class="running-indicator"></span>
           `;
 
-          button.addEventListener("click", () => windowElement ? toggleTaskbarWindow(windowElement) : launchApp(appName));
+          button.addEventListener("click", () => { closeAppLauncher(); windowElement ? toggleTaskbarWindow(windowElement) : launchApp(appName); });
           elements.runningTaskbarApps.appendChild(button);
         });
 
@@ -3289,6 +3327,7 @@
 
     document.querySelectorAll(".taskbar-app.pinned").forEach((button) => {
       button.addEventListener("click", () => {
+        closeAppLauncher();
         const appName = button.dataset.taskbarApp;
         const existing = getOpenWindow(appName);
 
@@ -3434,6 +3473,15 @@
       document.body.classList.toggle("night-theme", theme === "night");
       localStorage.setItem("terminal-theme", theme);
     }
+
+    function accentColorKey() { return `antigravity-accent:${tenantStorageId()}:${state.originalUser.toLowerCase()}`; }
+    function applyAccentColor(color = localStorage.getItem(accentColorKey()) || "#63ff8c") {
+      if (!/^#[0-9a-f]{6}$/i.test(color)) color = "#63ff8c";
+      document.documentElement.style.setProperty("--primary", color);
+      document.documentElement.style.setProperty("--primary-soft", `${color}20`);
+      return color;
+    }
+    function saveAccentColor(color) { localStorage.setItem(accentColorKey(), color); applyAccentColor(color); }
 
     function showCommandHistory() {
       if (!state.commandHistory.length) {
@@ -3720,9 +3768,12 @@
 
         <select id="themeSelect" class="app-select">
           <option value="night">Night</option>
-          <option value="dark">Dark</option>
-          <option value="light">Light Terminal</option>
+          <option value="dark">Midnight</option>
+          <option value="light">Light</option>
         </select>
+
+        <label class="field-label" for="accentColorInput" style="margin-top:14px">Accent color</label>
+        <div class="button-row"><input id="accentColorInput" type="color" value="${escapeHtml(applyAccentColor())}" style="width:52px;height:42px;border:1px solid var(--border);border-radius:8px;background:var(--panel-secondary);padding:4px"><button id="applyAccentButton" class="app-button" type="button">Apply accent</button></div>
 
         <div class="button-row">
           <button id="applyThemeButton" class="app-button" type="button">Apply theme</button>
@@ -3743,6 +3794,7 @@
         setTheme(select.value);
         showNotification(`Theme changed to ${select.value}.`);
       });
+      container.querySelector("#applyAccentButton").addEventListener("click", () => { saveAccentColor(container.querySelector("#accentColorInput").value); showNotification("Accent color updated."); });
 
       container.querySelector("#openPinAppsButton").addEventListener("click", () => {
         container.querySelector("#pinAppsPanel").classList.remove("hidden");
@@ -3859,18 +3911,19 @@
     }
 
     function renderStoreApp(container) {
-      const descriptions = {audio:"Play local music and audio files.",video:"Play local video files.",docs:"Create and format documents.",sheets:"Build and save worksheets.",slides:"Create slide presentations and present them full-screen.",contacts:"Keep a local contact list.",archive:"Inspect archive file details.",pdf:"Inspect local PDF file details.",mail:"Write and save email drafts.",calendar:"View the current calendar date."};
+      container.classList.add("store-app-content");
+      const descriptions = {audio:"Play local music and audio files.",video:"Play local video files.",docs:"Create, format, export, and print documents.",sheets:"Build and format spreadsheet workbooks.",slides:"Create, organize, style, and present slide decks.",contacts:"Message AntigravityOS users through Gravity Chat.",archive:"Inspect archive file details.",pdf:"Inspect local PDF file details.",mail:"Write and save email drafts.",calendar:"Plan events, tasks, and reminders."};
       const draw = () => {
         const installed = getInstalledAppKeys();
         const sorted = [...(window.ANTIGRAVITY_OPTIONAL_APPS || [])].sort((a, b) => Number(installed.includes(b.key)) - Number(installed.includes(a.key)) || a.title.localeCompare(b.title));
-        container.innerHTML = `<h2 class="app-title">Antigravity Store</h2><p class="app-description">Installed apps appear first. Select an app to view details.</p><div class="file-grid">${sorted.map(app=>`<button class="file-item" data-store-details="${escapeHtml(app.key)}"><span class="file-item-icon">${appIconMarkup(app.key,app.icon)}</span><strong>${escapeHtml(app.title)}</strong><div style="margin-top:8px;font-size:10px">${installed.includes(app.key)?"INSTALLED":"AVAILABLE"}</div></button>`).join("")}</div>`;
+        container.innerHTML = `<div class="store-app-shell"><div class="store-fixed-header"><h2 class="app-title">Antigravity Store</h2><p class="app-description">Installed apps appear first. Select an app to view details.</p></div><div class="store-scroll-region"><div class="file-grid">${sorted.map(app=>`<button class="file-item" data-store-details="${escapeHtml(app.key)}"><span class="file-item-icon">${appIconMarkup(app.key,app.icon)}</span><strong>${escapeHtml(app.title)}</strong><div style="margin-top:8px;font-size:10px">${installed.includes(app.key)?"INSTALLED":"AVAILABLE"}</div></button>`).join("")}</div></div></div>`;
         container.querySelectorAll("[data-store-details]").forEach(button=>button.onclick=()=>details(button.dataset.storeDetails));
       }; draw();
 
       function details(key) {
         const app=(window.ANTIGRAVITY_OPTIONAL_APPS||[]).find(item=>item.key===key);if(!app)return;
         const installed=getInstalledAppKeys().includes(key);
-        container.innerHTML=`<button class="app-button" data-back>← Store</button><div style="text-align:center;padding:clamp(20px,6vw,60px)"><div class="launcher-app-icon" style="margin:auto">${appIconMarkup(app.key,app.icon)}</div><h2 class="app-title" style="margin-top:18px">${escapeHtml(app.title)}</h2><p class="app-description">${escapeHtml(descriptions[key]||"A useful AntigravityOS application.")}</p><div class="button-row" style="justify-content:center">${installed?'<button class="app-button" data-open>OPEN</button><button class="app-button danger-button" data-uninstall>UNINSTALL</button>':'<button class="primary-button" style="max-width:260px" data-install>INSTALL</button>'}</div><div data-progress-wrap class="hidden" style="max-width:360px;margin:18px auto 0"><div class="install-progress"><div data-progress-bar class="install-progress-bar"></div></div><p data-progress class="app-description" style="margin-top:8px"></p></div></div>`;
+        container.innerHTML=`<div class="store-app-shell"><div class="store-fixed-header"><button class="app-button" data-back>← Back</button></div><div class="store-scroll-region"><div style="text-align:center;padding:clamp(20px,6vw,60px)"><div class="launcher-app-icon" style="margin:auto">${appIconMarkup(app.key,app.icon)}</div><h2 class="app-title" style="margin-top:18px">${escapeHtml(app.title)}</h2><p class="app-description">${escapeHtml(descriptions[key]||"A useful AntigravityOS application.")}</p><div class="button-row" style="justify-content:center">${installed?'<button class="app-button" data-open>OPEN</button><button class="app-button danger-button" data-uninstall>UNINSTALL</button>':'<button class="primary-button" style="max-width:260px" data-install>INSTALL</button>'}</div><div data-progress-wrap class="hidden" style="max-width:360px;margin:18px auto 0"><div class="install-progress"><div data-progress-bar class="install-progress-bar"></div></div><p data-progress class="app-description" style="margin-top:8px"></p></div></div></div></div>`;
         container.querySelector("[data-back]").onclick=draw;
         container.querySelector("[data-open]")?.addEventListener("click", () => launchApp(key));
         container.querySelector("[data-uninstall]")?.addEventListener("click", () => {
@@ -3969,6 +4022,22 @@
       }; draw();
     }
 
+    function normalizeWebAddress(value) {
+      const input=String(value||"").trim();if(!input)return"https://www.google.com/webhp?igu=1";
+      if(/^https?:\/\//i.test(input))return input;if(/^www\./i.test(input))return`https://${input}`;
+      if(/^[a-z0-9.-]+\.[a-z]{2,}(?:\/.*)?$/i.test(input))return`https://${input}`;
+      return`https://www.google.com/search?igu=1&q=${encodeURIComponent(input)}`;
+    }
+    function openGravityWeb(url, external = false) { const target=normalizeWebAddress(url);if(external){window.open(target,"_blank","noopener");return}state.gravityWebUrl=target;launchApp("web");window.dispatchEvent(new CustomEvent("gravity-web-navigate",{detail:{url:target}})); }
+    function linkifyText(value) { return escapeHtml(value).replace(/\b(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi,(match)=>{const clean=match.replace(/[),.!?]+$/g,"");const trailing=match.slice(clean.length);const url=/^www\./i.test(clean)?`https://${clean}`:clean;return`<a href="${escapeHtml(url)}" data-gravity-link="${escapeHtml(url)}" style="color:var(--primary);text-decoration:underline">${escapeHtml(clean)}</a>${escapeHtml(trailing)}`}); }
+    function bindGravityLinks(scope) { scope.querySelectorAll("[data-gravity-link]").forEach(link=>link.onclick=event=>{event.preventDefault();openGravityWeb(link.dataset.gravityLink,event.ctrlKey||event.metaKey)}); }
+    function renderGravityWebApp(container) {
+      let tabs=[{title:"New tab",url:state.gravityWebUrl||"https://www.google.com/webhp?igu=1",history:[]}],active=0;
+      const draw=()=>{const tab=tabs[active];container.innerHTML=`<div style="display:flex;flex-direction:column;height:100%;min-height:420px"><div class="button-row" style="margin:0 0 8px"><div style="display:flex;gap:5px;overflow:auto;flex:1">${tabs.map((item,index)=>`<button class="app-button" data-web-tab="${index}" style="${index===active?'border-color:var(--primary)':''}">${escapeHtml(item.title)}</button>`).join("")}</div><button class="app-button" data-new-tab>+</button></div><form data-web-form class="auth-code-row"><button class="app-button" type="button" data-back>←</button><button class="app-button" type="button" data-reload>↻</button><input class="app-input" data-address value="${escapeHtml(tab.url)}" placeholder="Search or enter address"><button class="app-button">Go</button><button class="app-button" type="button" data-external title="Open in regular browser">↗</button></form><p class="app-description" style="margin:7px 0">Some websites prevent embedded viewing. Use ↗ when a page refuses to display.</p><iframe data-web-frame src="${escapeHtml(tab.url)}" referrerpolicy="no-referrer" style="flex:1;width:100%;min-height:350px;border:1px solid var(--border);border-radius:8px;background:white"></iframe></div>`;
+        const navigate=value=>{const url=normalizeWebAddress(value);if(tab.url!==url)tab.history.push(tab.url);tab.url=url;tab.title=new URL(url).hostname.replace(/^www\./,"")||"Search";draw()};container.querySelector("[data-web-form]").onsubmit=e=>{e.preventDefault();navigate(container.querySelector("[data-address]").value)};container.querySelector("[data-back]").onclick=()=>{if(tab.history.length){tab.url=tab.history.pop();draw()}};container.querySelector("[data-reload]").onclick=()=>{const frame=container.querySelector("[data-web-frame]");frame.src=frame.src};container.querySelector("[data-external]").onclick=()=>window.open(tab.url,"_blank","noopener");container.querySelector("[data-new-tab]").onclick=()=>{tabs.push({title:"New tab",url:"https://www.google.com/webhp?igu=1",history:[]});active=tabs.length-1;draw()};container.querySelectorAll("[data-web-tab]").forEach(button=>button.onclick=()=>{active=Number(button.dataset.webTab);draw()});
+      };draw();const listener=event=>{if(!container.isConnected){window.removeEventListener("gravity-web-navigate",listener);return}tabs[active].url=event.detail.url;tabs[active].title="Loading...";draw()};window.addEventListener("gravity-web-navigate",listener);
+    }
+
     function renderMailApp(container) {
       const account = getCurrentMailAccount();
       if (!account) {
@@ -4047,6 +4116,7 @@
         if (selected) {
           const recipientText = (selected.to || []).join(", ");
           main.innerHTML = `<button class="app-button" id="mailBackButton">← Back</button><h3 class="app-title" style="margin-top:16px">${escapeHtml(selected.subject || "(No subject)")}</h3><div class="app-description"><strong style="color:var(--text)">From:</strong> ${escapeHtml(selected.fromName)} &lt;${escapeHtml(selected.fromEmail)}&gt;<br><strong style="color:var(--text)">To:</strong> ${escapeHtml(recipientText)}<br>${escapeHtml(new Date(selected.time).toLocaleString())}</div><div class="file-item" style="cursor:default;white-space:pre-wrap;color:var(--text);margin-top:14px;min-height:150px">${escapeHtml(selected.body || "")}</div><div class="button-row">${view === "inbox" ? '<button id="mailReplyButton" class="app-button">Reply</button>' : ""}<button id="mailDeleteButton" class="app-button danger-button">Delete</button></div>`;
+          const mailBodyCard=main.querySelector(".file-item");mailBodyCard.innerHTML=linkifyText(selected.body||"");bindGravityLinks(mailBodyCard);
           main.querySelector("#mailBackButton").onclick = () => draw(view);
           main.querySelector("#mailReplyButton")?.addEventListener("click", () => draw("compose", null, { to:selected.fromEmail, subject:String(selected.subject || "").startsWith("Re:") ? selected.subject : `Re: ${selected.subject || ""}` }));
           main.querySelector("#mailDeleteButton").onclick = () => { if (!confirm("Remove this mail from your mailbox?")) return; const all=getMailMessages();const message=all.find((item)=>item.id===selected.id);if(message){message.deletedBy=[...new Set([...(message.deletedBy||[]),currentEmail])];saveMailMessages(all);}draw(view);showNotification("Mail removed."); };
