@@ -38,6 +38,10 @@ used for server-mode login.
 - `antigravity-installed-apps:<username>`: Optional apps installed by a user.
 - `antigravity-pinned-apps:<username>`: Apps pinned to that user's taskbar.
 - `antigravity-ide-files:<username>`: Antigravity IDE virtual files.
+- `antigravity-files:<tenant>:<username>:home`: The user's persistent Files
+  hierarchy, imported file data, metadata, and folder structure.
+- `antigravity-files:<tenant>:<username>:root`: The separate elevated Files
+  hierarchy opened through Sudo.
 - `antigravity-gravity-chat-messages`: MySQL-synchronized Gravity Chat
   conversations and per-recipient read state.
 - `antigravity-gravity-chat-contacts:<account-id>`: Synchronized Gravity Chat

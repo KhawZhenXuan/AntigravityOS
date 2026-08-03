@@ -275,7 +275,8 @@
     }
 
     .setup-screen,
-    #bootScreen {
+    #bootScreen,
+    #shutdownScreen {
       display: grid;
       place-items: center;
       padding: 24px;
@@ -1545,6 +1546,22 @@
     </div></div>
   </section>
 
+  <section id="shutdownScreen" class="screen hidden">
+    <div class="login-shell"><div class="login-content">
+      <pre class="ascii-logo brand-ascii">
+    _         _   _                       _ _          ___  ____
+   / \  _ __ | |_(_) __ _ _ __ __ ___   _(_) |_ _   _ / _ \/ ___|
+  / _ \| '_ \| __| |/ _` | '__/ _` \ \ / / | __| | | | | | \___ \
+ / ___ \ | | | |_| | (_| | | | (_| |\ V /| | |_| |_| | |_| |___) |
+/_/   \_\| |_|\__|_|\__, |_|  \__,_| \_/ |_|\__|\__, |\___/|____/
+                     |___/                      |___/
+      </pre>
+      <h1 class="login-heading">Shutting down AntigravityOS</h1>
+      <p id="shutdownStatus" class="login-subheading">Preparing to shut down...</p>
+      <div class="boot-progress"><div id="shutdownProgressBar" class="boot-progress-bar"></div></div>
+    </div></div>
+  </section>
+
   <!-- LOGIN SCREEN -->
 
   <section id="loginScreen" class="screen hidden">
@@ -1783,6 +1800,7 @@
   <script src="System/Resources/credentials.js"></script>
   <script src="System/Resources/requests.js"></script>
   <script src="System/Resources/apps.js"></script>
+  <script src="System/Resources/files-app.js"></script>
   <script src="System/Resources/installations.js"></script>
 <script>
   /* InfinityFree/MySQL persistence bridge for the existing localStorage model. */
@@ -1895,6 +1913,9 @@
       bootScreen: document.getElementById("bootScreen"),
       bootStatus: document.getElementById("bootStatus"),
       bootProgressBar: document.getElementById("bootProgressBar"),
+      shutdownScreen: document.getElementById("shutdownScreen"),
+      shutdownStatus: document.getElementById("shutdownStatus"),
+      shutdownProgressBar: document.getElementById("shutdownProgressBar"),
       loginScreen: document.getElementById("loginScreen"),
       terminalScreen: document.getElementById("terminalScreen"),
       loginForm: document.getElementById("loginForm"),
@@ -2665,23 +2686,30 @@
       state.pendingLogout = false;
 
       elements.loginScreen.classList.add("hidden");
-      elements.bootScreen.classList.remove("hidden");
       elements.appLayer.innerHTML = "";
       elements.runningTaskbarApps.innerHTML = "";
       refreshInstalledApps();
+      runBootSequence(false);
+    }
 
+    function runBootSequence(isReboot = false) {
+      elements.shutdownScreen.classList.add("hidden");
+      elements.terminalScreen.classList.add("hidden");
+      elements.bootScreen.classList.remove("hidden");
+      elements.bootProgressBar.style.width = "0%";
+      elements.bootStatus.textContent = "Initializing system...";
       const wait = Math.min(8000, 1500 + getInstalledAppKeys().length * 650);
       runSteppedProgress(wait, (progress) => {
         elements.bootProgressBar.style.width = `${progress}%`;
         elements.bootStatus.textContent = progress < 35 ? "Loading system services..." : progress < 75 ? "Loading installed applications..." : "Preparing desktop...";
       }, () => {
-          elements.bootScreen.classList.add("hidden");
-          elements.terminalScreen.classList.remove("hidden");
-          updateIdentityUI();
-          createTerminalWindow();
-          printBanner();
-          printLine(`Session initialized for ${state.currentUser}.`, "success");
-          printLine('Type "help" for commands. Applications launch only through terminal commands.', "muted");
+        elements.bootScreen.classList.add("hidden");
+        elements.terminalScreen.classList.remove("hidden");
+        updateIdentityUI();
+        createTerminalWindow();
+        printBanner();
+        printLine(isReboot ? "System reboot completed." : `Session initialized for ${state.currentUser}.`, "success");
+        printLine(isReboot ? `Welcome back, ${state.currentUser}.` : 'Type "help" for commands. Applications launch only through terminal commands.', "muted");
       });
     }
 
@@ -3582,30 +3610,36 @@
     }
 
     function simulateReboot() {
-      printLine("Stopping applications...", "warning");
-      closeAllApps(false);
-
-      setTimeout(() => printLine("Saving session state...", "warning"), 350);
-
-      setTimeout(() => {
-        clearTerminal();
+      closeStartMenu();
+      elements.terminalScreen.classList.add("hidden");
+      elements.shutdownScreen.classList.remove("hidden");
+      elements.shutdownProgressBar.style.width = "0%";
+      closeAllApps(true);
+      runSteppedProgress(2200, (progress) => {
+        elements.shutdownProgressBar.style.width = `${progress}%`;
+        elements.shutdownStatus.textContent = progress < 35 ? "Closing applications..." : progress < 75 ? "Saving system state..." : "Restarting...";
+      }, () => {
         state.isRootShell = false;
-        updateIdentityUI();
-        printBanner();
-        printLine("System reboot completed.", "success");
-        printLine(`Welcome back, ${state.currentUser}.`, "muted");
-      }, 900);
+        elements.appLayer.innerHTML = "";
+        elements.runningTaskbarApps.innerHTML = "";
+        runBootSequence(true);
+      });
     }
 
     function simulateShutdown() {
-      const output = document.getElementById("terminalOutput");
-      if (output) printLine("Shutting down AntigravityOS...", "warning");
-      closeAllApps(false);
-
-      setTimeout(() => {
+      closeStartMenu();
+      elements.terminalScreen.classList.add("hidden");
+      elements.shutdownScreen.classList.remove("hidden");
+      elements.shutdownProgressBar.style.width = "0%";
+      closeAllApps(true);
+      runSteppedProgress(2200, (progress) => {
+        elements.shutdownProgressBar.style.width = `${progress}%`;
+        elements.shutdownStatus.textContent = progress < 35 ? "Closing applications..." : progress < 75 ? "Saving system state..." : "Powering off...";
+      }, () => {
+        elements.shutdownScreen.classList.add("hidden");
         performLogout();
         setLoginMessage("System shut down safely. Sign in to boot AntigravityOS.", "success");
-      }, 700);
+      });
     }
 
     function clearTerminal() {
@@ -3765,38 +3799,14 @@
     }
 
     function renderFilesApp(container, windowElement, options = {}) {
-      const files = options.sudo
-        ? [
-            { icon: "⚠", name: "root.config" },
-            { icon: "▣", name: "etc" },
-            { icon: "▣", name: "var" },
-            { icon: "▣", name: "root" }
-          ]
-        : [
-            { icon: "▣", name: "System" },
-            ...Object.keys(getIDEFiles()).map((name) => ({ icon: "▤", name }))
-          ];
-
-      container.innerHTML = `
-        <h2 class="app-title">${options.sudo ? "Root Files" : "Files"}</h2>
-        <p class="app-description">
-          ${options.sudo ? "Privileged filesystem view." : "Persistent Antigravity IDE files."}
-        </p>
-
-        <div class="file-grid">
-          ${files.map((file) => `
-            <div class="file-item" data-file="${escapeHtml(file.name)}">
-              <span class="file-item-icon">${escapeHtml(file.icon)}</span>
-              ${escapeHtml(file.name)}
-            </div>
-          `).join("")}
-        </div>
-      `;
-
-      container.querySelectorAll(".file-item").forEach((item) => {
-        item.addEventListener("click", () => {
-          showNotification(item.dataset.file === "System" ? "System contains application data and IDE files." : `Open ${item.dataset.file} in Antigravity IDE.`);
-        });
+      if (!window.ANTIGRAVITY_FILES_APP) {
+        container.innerHTML = '<p class="app-description">The Files resource could not be loaded.</p>';
+        return;
+      }
+      window.ANTIGRAVITY_FILES_APP.render(container, {
+        sudo: Boolean(options.sudo),
+        storageKey: scopedKey(`antigravity-files:${state.originalUser.toLowerCase()}:${options.sudo ? "root" : "home"}`),
+        notify: showNotification
       });
     }
 

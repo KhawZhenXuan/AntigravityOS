@@ -32,7 +32,8 @@ order:
 1. `System/Resources/credentials.js`
 2. `System/Resources/requests.js`
 3. `System/Resources/apps.js`
-4. `System/Resources/installations.js`
+4. `System/Resources/files-app.js`
+5. `System/Resources/installations.js`
 
 Important: `System/apps.js` and `System/installations.js` are duplicate/legacy
 copies and are **not loaded** by `AntigravityOS.html`. The active files are the
@@ -67,6 +68,9 @@ the running app to change.
 - Password reset request, Admin approval/rejection, and completion flows.
 - Logout confirmation dialog.
 - Boot duration scales with installed apps but is capped at 8 seconds.
+- Shutdown uses a timed shutdown screen with stepped progress. Reboot runs the
+  shutdown sequence first, then the full boot sequence, before restoring the
+  signed-in user's desktop session.
 
 ### Desktop and windows
 
@@ -109,7 +113,10 @@ the running app to change.
   embedded page view, and external-browser fallback.
 - Antigravity IDE with virtual files, import, export, save, rename, and new file
 - Antigravity Store for optional application installation/uninstallation
-- Files
+- Files, implemented as a persistent Finder-style virtual filesystem with
+  folders, breadcrumbs, favorites, history navigation, grid/list views,
+  sorting, search, multi-selection, imports, drag-to-folder organization,
+  rename/delete, previews, text editing, downloads, and keyboard actions
 - System information
 - Settings, including theme, data reset, app management, and taskbar pins
 - App Reset (Local/Master Admin only; preserves branding and Local accounts)
@@ -162,6 +169,42 @@ detail Back control remains fixed above the scrolling detail content.
 - `System/Resources/DATA_STORAGE.md` documents the browser-storage model.
 
 ## Change log
+
+### 2026-07-18
+
+- Replaced the Files app's fixed yellow folder emoji with a scalable folder
+  icon that follows each user's selected accent color in grid and list views.
+- Files modified: `System/Resources/files-app.js` and both handoff files. The
+  matching browser-only resource was synchronized.
+
+- Added a dedicated branded shutdown screen with stepped, non-linear progress
+  and changing shutdown status messages.
+- Shutdown now closes applications, displays the shutdown sequence, and only
+  returns to login after the sequence finishes.
+- Reboot now closes all windows, displays the shutdown sequence, transitions
+  into the existing app-dependent boot sequence, recreates Terminal, and then
+  restores the current signed-in session.
+- Files modified: `index.html` and both handoff files. Matching changes were
+  applied to the browser-only `AntigravityOS.html`.
+- Tests performed: both HTML entry points passed inline JavaScript compilation.
+  Manual timing and transition testing in a browser is still required.
+
+- Replaced the decorative Files view with a functional Finder-style file
+  manager backed by per-tenant/per-user synchronized storage.
+- Added seeded home folders, breadcrumb/sidebar navigation, Back/Forward/Up,
+  grid and list layouts, name/date/size sorting, reverse sorting, global file
+  search, unique-name conflict handling, and responsive mobile layout.
+- Added folder and text-file creation, file/folder import, multi-selection,
+  rename, recursive deletion, downloads, keyboard actions, and drag-and-drop
+  organization between folders.
+- Added previews for images, video, audio, PDF, and text/code files. Text files
+  can be edited and saved from the preview.
+- Added `System/Resources/files-app.js` and loaded it from `index.html`. The
+  matching browser-only resource was synchronized.
+- Tests performed: the shared Files resources are byte-identical and pass
+  JavaScript syntax validation; both HTML entry points pass inline-script
+  compilation. Interactive browser testing was blocked by the local-file URL
+  security policy, so a manual browser regression pass is still required.
 
 ### 2026-07-16
 
